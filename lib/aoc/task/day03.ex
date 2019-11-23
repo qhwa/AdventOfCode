@@ -30,4 +30,5 @@ defmodule AOC.Task.Day03 do
   defp new_pos([x, y], "v"), do: [x, y + 1]
   defp new_pos([x, y], "<"), do: [x - 1, y]
   defp new_pos([x, y], ">"), do: [x + 1, y]
+  defp new_pos(pos, _), do: pos
 end
