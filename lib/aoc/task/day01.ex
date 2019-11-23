@@ -1,5 +1,4 @@
 defmodule AOC.Tasks.Day1 do
-
   @moduledoc """
   @see https://adventofcode.com/2015/day/1#part2
   """

@@ -47,12 +47,12 @@ defmodule AOC.Task.Day02 do
   end
 
   def feet_of_ribbon(data) when is_binary(data) do
-    [l, w, h] = 
+    [l, w, h] =
       data
       |> String.trim()
       |> String.split("x")
       |> Enum.map(&String.to_integer/1)
-    
+
     feet_of_ribbon({l, w, h})
   end
 
