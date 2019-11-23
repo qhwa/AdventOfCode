@@ -1,4 +1,4 @@
-defmodule AOC.Task.Day2 do
+defmodule AOC.Task.Day02 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/2
   """
@@ -6,6 +6,8 @@ defmodule AOC.Task.Day2 do
   def resolve({:file, file}) do
     file
     |> File.stream!()
+    |> Enum.to_list()
+    |> resolve()
   end
 
   def resolve(list) when is_list(list) do
@@ -16,6 +18,7 @@ defmodule AOC.Task.Day2 do
   def resolve(data) when is_binary(data) do
     [l, w, h] =
       data
+      |> String.trim()
       |> String.split("x")
       |> Enum.map(&String.to_integer/1)
 
