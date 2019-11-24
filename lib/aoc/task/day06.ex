@@ -3,52 +3,54 @@ defmodule AOC.Task.Day06 do
   @see https://adventofcode.com/2015/day/6
   """
 
-  use Bitwise
-
   def puzzle() do
-    {1000, lights} =
+    {x_stops, y_stops, ops} =
       "priv/data/day06.txt"
       |> File.stream!()
       |> Enum.to_list()
-      |> operate({1000, 0..1_000_000 |> Enum.map(fn _ -> 0 end)})
+      |> build_ranges([], [], [])
 
-    Enum.count(lights, fn i -> i == 1 end)
+    squares =
+      for {x, i} <- Enum.with_index(x_stops), {y, j} <- Enum.with_index(y_stops) do
+        # {point, size}
+        {{x, y}, (next_stop(x_stops, i) - x) * (next_stop(y_stops, j) - y)}
+      end
+
+    walk(squares, ops)
   end
 
-  def operate([], lights) do
-    lights
+  def build_ranges([], x_stops, y_stops, ops) do
+    x_stops =
+      x_stops
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    y_stops =
+      y_stops
+      |> Enum.uniq()
+      |> Enum.sort()
+
+    {x_stops, y_stops, ops}
   end
 
-  def operate([head | tail], lights) do
-    operate(tail, operate(head, lights))
+  def build_ranges([head | tail], x_stops, y_stops, ops) do
+    {op, {x0, y0, x1, y1}} = parse_instruction(head)
+
+    build_ranges(
+      tail,
+      x_stops ++ [x0, x1 + 1],
+      y_stops ++ [y0, y1 + 1],
+      ops ++ [{op, x0..x1, y0..y1}]
+    )
   end
 
-  def operate(ins, lights) when is_binary(ins) do
-    ins
-    |> parse_instruction()
-    |> operate(lights)
+  def next_stop(stops, i) when i == length(stops) - 1 do
+    1000
   end
 
-  def operate({operation, {x0, y0, x1, y1}}, {w, lights}) do
-    pins = for x <- x0..x1, y <- y0..y1, do: y * w + x
-    IO.inspect operation
-
-    lights =
-      pins
-      |> Enum.reduce(lights, fn i, lights ->
-        List.update_at(lights, i, &update_pin(operation, &1))
-      end)
-
-    {w, lights}
+  def next_stop(stops, i) do
+    Enum.at(stops, i + 1)
   end
-
-  def operate(_, lights) do
-    lights
-  end
-
-  def update_pin(:on, _), do: 1
-  def update_pin(:off, _), do: 0
-  def update_pin(:toggle, x), do: 1 - x
 
   def parse_instruction("turn on " <> raw) do
     {:on, parse_range(raw)}
@@ -71,5 +73,25 @@ defmodule AOC.Task.Day06 do
     |> Regex.scan(raw)
     |> Enum.map(fn [x] -> String.to_integer(x) end)
     |> List.to_tuple()
+  end
+
+  def walk(squares, ops) do
+    Enum.reduce(squares, 0, fn {point, size}, acc ->
+      if walk_point(point, ops), do: acc + size, else: acc
+    end)
+  end
+
+  def walk_point({x, y}, ops) do
+    Enum.reduce(ops, false, fn {op, x_range, y_range}, acc ->
+      if Enum.member?(x_range, x) && Enum.member?(y_range, y) do
+        case op do
+          :on -> true
+          :off -> false
+          :toggle -> !acc
+        end
+      else
+        acc
+      end
+    end)
   end
 end
