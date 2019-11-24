@@ -77,21 +77,35 @@ defmodule AOC.Task.Day06 do
 
   def walk(squares, ops) do
     Enum.reduce(squares, 0, fn {point, size}, acc ->
-      if walk_point(point, ops), do: acc + size, else: acc
+      acc + walk_point(point, ops) * size
     end)
   end
 
+  @operater :operate_part2
+
   def walk_point({x, y}, ops) do
-    Enum.reduce(ops, false, fn {op, x_range, y_range}, acc ->
+    Enum.reduce(ops, 0, fn {op, x_range, y_range}, acc ->
       if Enum.member?(x_range, x) && Enum.member?(y_range, y) do
-        case op do
-          :on -> true
-          :off -> false
-          :toggle -> !acc
-        end
+        apply(__MODULE__, @operater, [op, acc])
       else
         acc
       end
     end)
+  end
+
+  def operate_part1(op, acc) do
+    case op do
+      :on -> 1
+      :off -> 0
+      :toggle -> 1 - acc
+    end
+  end
+
+  def operate_part2(op, acc) do
+    case op do
+      :on -> acc + 1
+      :off -> max(acc - 1, 0)
+      :toggle -> acc + 2
+    end
   end
 end
