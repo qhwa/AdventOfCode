@@ -3,12 +3,14 @@ defmodule AOC.Task.Day08 do
   @see https://adventofcode.com/2015/day/8
   """
 
+  @parse_f :parse2
+
   def puzzle() do
     "priv/data/day08.txt"
     |> File.stream!()
     |> Enum.to_list()
     |> Enum.reduce({0, 0}, fn raw, {code_len, mem_len} ->
-      {c, m} = parse(raw |> String.trim_trailing())
+      {c, m} = apply(__MODULE__, @parse_f, [raw |> String.trim_trailing()])
       {code_len + c, mem_len + m}
     end)
   end
@@ -37,5 +39,17 @@ defmodule AOC.Task.Day08 do
       |> String.length()
 
     {str |> String.length(), mem_len}
+  end
+
+  def parse2(str) do
+    mem_len =
+      str
+      |> String.replace(~r/^"|"$/, "")
+      |> String.replace(~r/\\\\/, "____")
+      |> String.replace(~r/\\x[A-Fa-f0-9]{2}/, "_____")
+      |> String.replace(~r/\\"/, "____")
+      |> String.length()
+
+    {str |> String.length(), mem_len + 6}
   end
 end
