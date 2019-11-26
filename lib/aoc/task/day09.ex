@@ -50,7 +50,7 @@ defmodule AOC.Task.Day09 do
   def walk(orders) do
     orders
     |> Enum.map(&distance/1)
-    |> Enum.min()
+    |> Enum.min_max()
   end
 
   def distance(order) do
