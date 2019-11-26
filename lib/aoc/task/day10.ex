@@ -3,8 +3,9 @@ defmodule AOC.Task.Day10 do
   @see https://adventofcode.com/2015/day/10
   """
 
+  @times 50
   def puzzle() do
-    1..40
+    1..@times
     |> Enum.reduce("3113322113", fn _, acc ->
       look_and_say(acc)
     end)
