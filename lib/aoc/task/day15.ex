@@ -18,6 +18,15 @@ defmodule AOC.Task.Day15 do
     |> Enum.max_by(fn {_, score} -> score end)
   end
 
+  def puzzle2() do
+    @ingredients
+    |> Keyword.keys()
+    |> possible_groups(100)
+    |> Enum.filter(&(cal_sum(&1) == 500))
+    |> Enum.map(&score/1)
+    |> Enum.max_by(fn {_, score} -> score end)
+  end
+
   def possible_groups([], _) do
     []
   end
@@ -55,5 +64,13 @@ defmodule AOC.Task.Day15 do
 
     total = max(sum_cap, 0) * max(sum_dur, 0) * max(sum_fla, 0) * max(sum_txt, 0)
     {group, total}
+  end
+
+  def cal_sum(group) do
+    group
+    |> Enum.reduce(0, fn {ing, amount}, acc ->
+      {_, _, _, _, cal} = Keyword.get(@ingredients, ing)
+      acc + amount * cal
+    end)
   end
 end
