@@ -1,6 +1,6 @@
 # Advent Of Code
 
-Elixir solutions for [Advent Of Code](https://adventofcode.com/)
+Elixir solutions for [Advent Of Code](https://adventofcode.com/).
 
 ## status
 
