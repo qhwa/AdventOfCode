@@ -10,7 +10,18 @@ defmodule AOC.Task.Day17 do
     @containers
     |> build_groups([[]])
     |> Enum.filter(&(Enum.sum(&1) == @sum))
-    |> length()
+  end
+
+  def puzzle2() do
+    solutions = puzzle()
+
+    min_len =
+      solutions
+      |> Enum.min_by(&length/1)
+      |> length()
+
+    solutions
+    |> Enum.filter(&(length(&1) == min_len))
   end
 
   def build_groups([], acc) do
