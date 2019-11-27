@@ -1,6 +1,6 @@
 defmodule AOC.Task.Day12 do
   @moduledoc """
-  @see https://adventofcode.com/2015/day/11
+  @see https://adventofcode.com/2015/day/12
   """
 
   def puzzle() do
