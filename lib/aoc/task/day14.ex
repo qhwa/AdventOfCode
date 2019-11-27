@@ -30,7 +30,39 @@ defmodule AOC.Task.Day14 do
   def puzzle() do
     @deers
     |> Enum.map(&distance_after(&1, @race_dur))
-    |> Enum.max_by(fn {deer, dist} -> dist end)
+    |> Enum.max_by(fn {_, dist} -> dist end)
+  end
+
+  def puzzle2() do
+    init_scores = for _ <- @deers, do: 0
+
+    dists =
+      1..2503
+      |> Enum.reduce(init_scores, &update_score_at/2)
+
+    {max_score, i} =
+      dists
+      |> Enum.with_index()
+      |> Enum.max_by(fn {score, _} -> score end)
+
+    {Enum.at(@deers, i), max_score}
+  end
+
+  defp update_score_at(t, scores) do
+    dists = @deers |> Enum.map(&distance_after(&1, t))
+    {_, max_dist} = dists |> Enum.max_by(fn {_, dist} -> dist end)
+
+    scores
+    |> Enum.with_index()
+    |> Enum.map(fn {score, i} ->
+      case Enum.at(dists, i) do
+        {_, ^max_dist} ->
+          score + 1
+
+        _ ->
+          score
+      end
+    end)
   end
 
   def distance_after(deer, time) do
