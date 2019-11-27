@@ -27,7 +27,7 @@ defmodule AOC.Task.Day13 do
   @people ~w[Alice Bob Carol David Eric Frank George Mallory]
 
   def puzzle() do
-    @people
+    [:me | @people]
     |> build_arrs()
     |> walk()
     |> Enum.max_by(fn {_arr, score} -> score end)
@@ -69,6 +69,9 @@ defmodule AOC.Task.Day13 do
 
     score
   end
+
+  defp relation(:me, _), do: 0
+  defp relation(_, :me), do: 0
 
   defp relation(a, b) do
     @relations
