@@ -33,32 +33,39 @@ defmodule AOC.Task.Day18 do
 
   def next(state, size) do
     Enum.reduce(state, state, fn {key, {x, y, current}}, acc ->
+      max = size - 1
+
       neighbors9 =
         for i <- (x - 1)..(x + 1), j <- (y - 1)..(y + 1), i >= 0, j >= 0, i < size, j < size do
-          {_, _, s} = Map.get(state, :"#{i}_#{j}")
-
-          if s == ?#, do: 1, else: 0
+          if light?(i, j, Map.get(state, :"#{i}_#{j}"), max), do: 1, else: 0
         end
         |> Enum.sum()
 
-      case {current, neighbors9} do
-        {?#, 3} ->
+      case next_single_light(current, neighbors9, x, y, max) do
+        ^current ->
           acc
 
-        {?#, 4} ->
-          acc
-
-        {?#, _} ->
-          Map.put(acc, key, {x, y, ?.})
-
-        {?., 3} ->
-          Map.put(acc, key, {x, y, ?#})
-
-        _ ->
-          acc
+        other ->
+          acc |> Map.put(key, {x, y, other})
       end
     end)
   end
+
+  defp light?(0, 0, _, _), do: true
+  defp light?(0, max, _, max), do: true
+  defp light?(max, max, _, max), do: true
+  defp light?(max, 0, _, max), do: true
+  defp light?(_, _, {_, _, ?#}, _), do: true
+  defp light?(_, _, _, _), do: false
+
+  defp next_single_light(_, _, 0, 0, _), do: ?#
+  defp next_single_light(_, _, 0, max, max), do: ?#
+  defp next_single_light(_, _, max, 0, max), do: ?#
+  defp next_single_light(_, _, max, max, max), do: ?#
+  defp next_single_light(?#, 3, _, _, _), do: ?#
+  defp next_single_light(?#, 4, _, _, _), do: ?#
+  defp next_single_light(?., 3, _, _, _), do: ?#
+  defp next_single_light(_, _, _, _, _), do: ?.
 
   def count_light(state) do
     state
