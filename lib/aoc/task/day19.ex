@@ -13,7 +13,7 @@ defmodule AOC.Task.Day19 do
            |> Stream.map(&List.to_tuple/1)
            |> Enum.into([])
 
-  def puzzle() do
+  def puzzle do
     @input
     |> group_count(@mapping)
   end
@@ -41,5 +41,50 @@ defmodule AOC.Task.Day19 do
       |> List.replace_at(i, v)
       |> Enum.join("")
     end)
+  end
+
+  def puzzle2 do
+    step(@input, @mapping)
+  end
+
+  def step(input, mapping) do
+    mapping =
+      mapping
+      |> Enum.reduce(%{}, fn {k, v}, acc ->
+        Map.update(acc, v, [k], &[k | &1])
+      end)
+
+    {^input, min} = build_tree(input, mapping, 0)
+    min
+  end
+
+  def build_tree(input, mapping, depth) do
+    if input =~ ~r/^e+$/ do
+      {:done, depth}
+    else
+      build_tree_node(input, mapping, depth)
+    end
+  end
+
+  def build_tree_node(input, mapping, depth) do
+    groups =
+      for {dest, froms} <- mapping, String.contains?(input, dest), f <- froms do
+        input |> String.replace(dest, f, global: false)
+      end
+
+    {_, min_depth} =
+      groups
+      |> Enum.map(&build_tree(&1, mapping, depth + 1))
+      |> Enum.min_by(&walk/1, fn -> {:halt, 9_999_999} end)
+
+    {input, min_depth}
+  end
+
+  def walk({:done, depth}) do
+    depth
+  end
+
+  def walk({_, min_depth}) do
+    min_depth
   end
 end
