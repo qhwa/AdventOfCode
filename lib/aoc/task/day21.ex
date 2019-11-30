@@ -54,6 +54,19 @@ defmodule AOC.Task.Day21 do
     |> IO.puts()
   end
 
+  def puzzle2 do
+    for w <- @weapons, ar <- @armor, ring1 <- @rings, ring2 <- @rings -- [ring1] do
+      [w, ar, ring1, ring2]
+    end
+    |> Enum.reject(fn items ->
+      {d, a} = sum_stats(items)
+      win?({100, d, a}, @boss)
+    end)
+    |> Enum.max_by(&cost/1)
+    |> cost()
+    |> IO.puts()
+  end
+
   def sum_stats(nil) do
     {0, 0}
   end
