@@ -11,7 +11,7 @@ defmodule AOC.Task.Day20 do
 
   def puzzle2 do
     1
-    |> find(29_000_000 / 11, fn e, h -> h - e <= 50 end)
+    |> find(29_000_000 / 11, &(div(&2, &1) <= 50))
     |> IO.puts()
   end
 
