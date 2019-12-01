@@ -1,8 +1,8 @@
 defmodule Day08Test do
-  import AOC.Task.Day08
+  import AOC.Y2015.Day08
 
   use ExUnit.Case, async: true
-  doctest AOC.Task.Day08
+  doctest AOC.Y2015.Day08
 
   describe "parse/1" do
     test "it works with \\x" do

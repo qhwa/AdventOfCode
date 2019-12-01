@@ -1,11 +1,11 @@
-defmodule AOC.Task.Day14 do
+defmodule AOC.Y2015.Day14 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/14
   """
 
   @format ~r'(\w+) .+ (\d+) km/s for (\d+) seconds, .+ (\d+) seconds.$'
 
-  @stats "priv/data/day14.txt"
+  @stats "priv/data/2015/day14.txt"
          |> File.stream!()
          |> Stream.map(fn line ->
            case Regex.run(@format, line) do

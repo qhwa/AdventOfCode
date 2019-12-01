@@ -1,4 +1,4 @@
-defmodule AOC.Task.Day08 do
+defmodule AOC.Y2015.Day08 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/8
   """
@@ -6,7 +6,7 @@ defmodule AOC.Task.Day08 do
   @parse_f :parse2
 
   def puzzle() do
-    "priv/data/day08.txt"
+    "priv/data/2015/day08.txt"
     |> File.stream!()
     |> Enum.to_list()
     |> Enum.reduce({0, 0}, fn raw, {code_len, mem_len} ->

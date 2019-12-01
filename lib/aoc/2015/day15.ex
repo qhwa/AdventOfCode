@@ -1,4 +1,4 @@
-defmodule AOC.Task.Day15 do
+defmodule AOC.Y2015.Day15 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/15
   """

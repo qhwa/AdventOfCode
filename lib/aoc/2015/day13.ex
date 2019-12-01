@@ -1,11 +1,11 @@
-defmodule AOC.Task.Day13 do
+defmodule AOC.Y2015.Day13 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/13
   """
 
   @format ~r/(\w+) .+ (lose|gain) (\d+) .+ (\w+)\.$/
 
-  @relations "priv/data/day13.txt"
+  @relations "priv/data/2015/day13.txt"
              |> File.stream!()
              |> Stream.map(fn line ->
                case Regex.run(@format, line) do

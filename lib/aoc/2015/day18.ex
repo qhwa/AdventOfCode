@@ -1,9 +1,9 @@
-defmodule AOC.Task.Day18 do
+defmodule AOC.Y2015.Day18 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/18
   """
 
-  @init_state "priv/data/day18.txt"
+  @init_state "priv/data/2015/day18.txt"
               |> File.stream!()
               |> Stream.with_index()
               |> Stream.map(fn {line, y} ->

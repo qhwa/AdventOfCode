@@ -1,11 +1,11 @@
-defmodule AOC.Task.Day06 do
+defmodule AOC.Y2015.Day06 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/6
   """
 
   def puzzle() do
     {x_stops, y_stops, ops} =
-      "priv/data/day06.txt"
+      "priv/data/2015/day06.txt"
       |> File.stream!()
       |> Enum.to_list()
       |> build_ranges([], [], [])

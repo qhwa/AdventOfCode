@@ -1,5 +1,5 @@
 defmodule Day18Test do
-  import AOC.Task.Day18
+  import AOC.Y2015.Day18
 
   use ExUnit.Case
 

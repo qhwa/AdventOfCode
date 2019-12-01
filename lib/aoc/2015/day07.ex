@@ -1,4 +1,4 @@
-defmodule AOC.Task.Day07 do
+defmodule AOC.Y2015.Day07 do
   use Bitwise
   use Agent
 
@@ -19,7 +19,7 @@ defmodule AOC.Task.Day07 do
     value
   end
 
-  def puzzle(file \\ "priv/data/day07.txt") do
+  def puzzle(file \\ "priv/data/2015/day07.txt") do
     circuit =
       file
       |> File.stream!()

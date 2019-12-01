@@ -1,4 +1,4 @@
-defmodule AOC.Task.Day09 do
+defmodule AOC.Y2015.Day09 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/9
   """
@@ -14,7 +14,7 @@ defmodule AOC.Task.Day09 do
     Straylight
   ]
 
-  @distances "priv/data/day09.txt"
+  @distances "priv/data/2015/day09.txt"
              |> File.stream!()
              |> Stream.map(fn line ->
                [key, value] =

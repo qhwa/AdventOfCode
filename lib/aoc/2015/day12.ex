@@ -1,10 +1,10 @@
-defmodule AOC.Task.Day12 do
+defmodule AOC.Y2015.Day12 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/12
   """
 
   def puzzle() do
-    "priv/data/day12.txt"
+    "priv/data/2015/day12.txt"
     |> File.read!()
     |> Jason.decode!()
     |> walk()

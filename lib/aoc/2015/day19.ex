@@ -1,4 +1,4 @@
-defmodule AOC.Task.Day19 do
+defmodule AOC.Y2015.Day19 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/19
   """
@@ -6,7 +6,7 @@ defmodule AOC.Task.Day19 do
   @reg ~r/[A-z][a-z]*/
   @input "CRnCaCaCaSiRnBPTiMgArSiRnSiRnMgArSiRnCaFArTiTiBSiThFYCaFArCaCaSiThCaPBSiThSiThCaCaPTiRnPBSiThRnFArArCaCaSiThCaSiThSiRnMgArCaPTiBPRnFArSiThCaSiRnFArBCaSiRnCaPRnFArPMgYCaFArCaPTiTiTiBPBSiThCaPTiBPBSiRnFArBPBSiRnCaFArBPRnSiRnFArRnSiRnBFArCaFArCaCaCaSiThSiThCaCaPBPTiTiRnFArCaPTiBSiAlArPBCaCaCaCaCaSiRnMgArCaSiThFArThCaSiThCaSiRnCaFYCaSiRnFYFArFArCaSiRnFYFArCaSiRnBPMgArSiThPRnFArCaSiRnFArTiRnSiRnFYFArCaSiRnBFArCaSiRnTiMgArSiThCaSiThCaFArPRnFArSiRnFArTiTiTiTiBCaCaSiRnCaCaFYFArSiThCaPTiBPTiBCaSiThSiRnMgArCaF"
 
-  @mapping "priv/data/day19.txt"
+  @mapping "priv/data/2015/day19.txt"
            |> File.stream!()
            |> Stream.map(&String.trim_trailing/1)
            |> Stream.map(&String.split(&1, " => "))

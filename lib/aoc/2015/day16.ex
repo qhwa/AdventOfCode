@@ -1,4 +1,4 @@
-defmodule AOC.Task.Day16 do
+defmodule AOC.Y2015.Day16 do
   @moduledoc """
   @see https://adventofcode.com/2015/day/16
   """
@@ -30,7 +30,7 @@ defmodule AOC.Task.Day16 do
   ]
 
   def puzzle() do
-    "priv/data/day16.txt"
+    "priv/data/2015/day16.txt"
     |> File.stream!()
     |> Stream.map(&parse/1)
     |> Stream.filter(fn {_, attrs} ->
@@ -40,7 +40,7 @@ defmodule AOC.Task.Day16 do
   end
 
   def puzzle2() do
-    "priv/data/day16.txt"
+    "priv/data/2015/day16.txt"
     |> File.stream!()
     |> Stream.map(&parse/1)
     |> Stream.filter(fn {_, attrs} ->
