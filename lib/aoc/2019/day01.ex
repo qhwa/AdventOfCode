@@ -27,7 +27,7 @@ defmodule AOC.Y2019.Day01 do
       x when x > 0 ->
         x + fuel(x)
 
-      x when x <= 0 ->
+      _ ->
         0
     end
   end
