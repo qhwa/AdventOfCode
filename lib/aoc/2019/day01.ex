@@ -3,13 +3,8 @@ defmodule AOC.Y2019.Day01 do
   @see https://adventofcode.com/2019/day/1
   """
 
-  @masses "priv/data/2019/day01.txt"
-          |> File.stream!()
-          |> Stream.map(fn line ->
-            line
-            |> String.trim_trailing()
-            |> String.to_integer()
-          end)
+  @masses "2019/day01.txt"
+          |> AOC.Input.stream(&String.to_integer/1)
           |> Enum.to_list()
 
   def part1 do
