@@ -16,6 +16,21 @@ defmodule AOC.Y2019.Day02 do
     |> run()
   end
 
+  def part2() do
+    for noun <- 0..99, verb <- 0..99 do
+      {noun, verb}
+    end
+    |> Enum.find(fn {n, v} ->
+      [head | _] =
+        @program
+        |> List.replace_at(1, n)
+        |> List.replace_at(2, v)
+        |> run()
+
+      head == 19_690_720
+    end)
+  end
+
   def run(program, cursor \\ 0)
 
   def run(program, cursor) when cursor >= length(program) do
