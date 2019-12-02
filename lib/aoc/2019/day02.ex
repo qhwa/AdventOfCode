@@ -17,18 +17,16 @@ defmodule AOC.Y2019.Day02 do
   end
 
   def part2() do
-    for noun <- 0..99, verb <- 0..99 do
-      {noun, verb}
-    end
-    |> Enum.find(fn {n, v} ->
-      [head | _] =
-        @program
-        |> List.replace_at(1, n)
-        |> List.replace_at(2, v)
-        |> run()
+    {n, v} =
+      for noun <- 0..99, verb <- 0..99 do
+        {noun, verb}
+      end
+      |> Enum.find(fn {n, v} ->
+        [head, _, _ | tail] = @program
+        19_690_720 == run([head, n, v | tail])
+      end)
 
-      head == 19_690_720
-    end)
+    n * 100 + v
   end
 
   def run(program, cursor \\ 0)
@@ -44,15 +42,15 @@ defmodule AOC.Y2019.Day02 do
       |> operate(program)
 
     case result do
-      {:halt, ^program} ->
-        program
+      :halt ->
+        hd(program)
 
       _ ->
         run(result, cursor + 4)
     end
   end
 
-  def operate([99 | _tail], program), do: {:halt, program}
+  def operate([99 | _tail], _), do: :halt
 
   def operate([1, r1, r2, w], program) do
     ret = Enum.at(program, r1) + Enum.at(program, r2)
