@@ -3,13 +3,14 @@ defmodule AOC.Y2019.Day02 do
   @see https://adventofcode.com/2019/day/2
   """
 
+  import Helper.MyList, only: [to_map: 1]
+
   @program "priv/data/2019/day02.txt"
            |> File.read!()
            |> String.trim()
            |> String.split(",")
            |> Stream.map(&String.to_integer/1)
-           |> Enum.reduce({0, %{}}, fn x, {i, map} -> {i + 1, Map.put(map, i, x)} end)
-           |> elem(1)
+           |> to_map()
 
   def part1 do
     run_program(@program, 12, 2)
@@ -50,19 +51,13 @@ defmodule AOC.Y2019.Day02 do
   defp calc(op, program, p) do
     {p1, p2, p3} = {p + 1, p + 2, p + 3}
 
-    r1 = Map.get(program, Map.get(program, p1))
-    r2 = Map.get(program, Map.get(program, p2))
-    w = Map.get(program, p3)
+    r1 = program[program[p1]]
+    r2 = program[program[p2]]
+    wp = program[p3]
 
-    Map.put(program, w, execute(op, r1, r2))
+    %{program | wp => execute(op, r1, r2)}
   end
 
   defp execute(1, a, b), do: a + b
   defp execute(2, a, b), do: a * b
-
-  defp to_map(list) do
-    list
-    |> Enum.reduce({0, %{}}, fn x, {i, map} -> {i + 1, Map.put(map, i, x)} end)
-    |> elem(1)
-  end
 end

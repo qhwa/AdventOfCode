@@ -26,4 +26,10 @@ defmodule Helper.MyList do
       {a, b, c}
     end
   end
+
+  def to_map(list) do
+    list
+    |> Enum.reduce({0, %{}}, fn x, {i, map} -> {i + 1, Map.put(map, i, x)} end)
+    |> elem(1)
+  end
 end
