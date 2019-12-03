@@ -15,14 +15,10 @@ defmodule AOC.Y2019.Day03 do
   end
 
   def part2 do
-  end
-
-  def example() do
-    line_a = parse_line("R75,D30,R83,U83,L12,D49,R71,U7,L72")
-    line_b = parse_line("U62,R66,U55,R34,D71,R55,D58,R83")
-
-    {x, y} = closest_intersection(line_a, line_b)
-    abs(x) + abs(y)
+    @line_commands
+    |> Enum.map(&parse_line/1)
+    |> Enum.reverse()
+    |> smallest_step()
   end
 
   defp parse_line(data) do
@@ -36,7 +32,7 @@ defmodule AOC.Y2019.Day03 do
         move(dir, {x, y}, len, lines)
       end)
 
-    segments
+    Enum.reverse(segments)
   end
 
   defp move(:R, {x, y}, len, lines) do
@@ -60,13 +56,20 @@ defmodule AOC.Y2019.Day03 do
   end
 
   def closest_intersection(line_a, line_b) do
+    line_a
+    |> all_intersection(line_b)
+    |> Enum.min_by(fn {x, y} ->
+      abs(x) + abs(y)
+    end)
+  end
+
+  def all_intersection(line_a, line_b) do
     for seg_a <- line_a,
         seg_b <- line_b,
         point <- inter(seg_a, seg_b),
         point != {0, 0} do
       point
     end
-    |> Enum.min_by(fn {x, y} -> abs(x) + abs(y) end)
   end
 
   defp inter({{xa, ya0}, {xa, ya1}}, {{xb0, yb}, {xb1, yb}})
@@ -80,4 +83,40 @@ defmodule AOC.Y2019.Day03 do
   end
 
   defp inter(_, _), do: []
+
+  def smallest_step([line_a, line_b]) do
+    line_a
+    |> all_intersection(line_b)
+    |> Stream.map(&(step_count(line_a, &1) + step_count(line_b, &1)))
+    |> Enum.min()
+  end
+
+  def step_count(line, p) do
+    line
+    |> Enum.reduce_while(0, fn seg, acc ->
+      case distance(seg, p) do
+        nil ->
+          {:cont, acc + len(seg)}
+
+        n ->
+          {:halt, acc + n}
+      end
+    end)
+  end
+
+  def len({{x0, y0}, {x1, y1}}) do
+    abs(x0 - x1) + abs(y1 - y0)
+  end
+
+  def distance({{x, y0}, {x, y1}}, {x, y}) when y in y0..y1 do
+    abs(y - y0)
+  end
+
+  def distance({{x0, y}, {x1, y}}, {x, y}) when x in x0..x1 do
+    abs(x - x0)
+  end
+
+  def distance(_, _) do
+    nil
+  end
 end
