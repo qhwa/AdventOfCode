@@ -7,58 +7,62 @@ defmodule AOC.Y2019.Day02 do
            |> File.read!()
            |> String.trim()
            |> String.split(",")
-           |> Enum.map(&String.to_integer/1)
+           |> Stream.map(&String.to_integer/1)
+           |> Enum.reduce({0, %{}}, fn x, {i, map} -> {i + 1, Map.put(map, i, x)} end)
+           |> elem(1)
 
   def part1 do
-    @program
-    |> List.replace_at(1, 12)
-    |> List.replace_at(2, 2)
-    |> run()
+    run_program(@program, 12, 2)
   end
 
-  def part2() do
-    {n, v} =
-      for noun <- 0..99, verb <- 0..99 do
-        {noun, verb}
-      end
-      |> Enum.find(fn {n, v} ->
-        [head, _, _ | tail] = @program
-        19_690_720 == run([head, n, v | tail])
-      end)
-
-    n * 100 + v
+  def part2 do
+    for n <- 0..99, v <- 0..99 do
+      {n, v}
+    end
+    |> Enum.find(fn {n, v} ->
+      run_program(@program, n, v) == 19_690_720
+    end)
   end
 
-  def run(program, cursor \\ 0)
-
-  def run(program, cursor) when cursor >= length(program) do
-    program
+  def run_program(p) when is_list(p) do
+    p
+    |> to_map()
+    |> run(0)
   end
 
-  def run(program, cursor) do
-    result =
-      program
-      |> Enum.slice(cursor, 4)
-      |> operate(program)
+  def run_program(p, n, v) do
+    %{p | 1 => n, 2 => v}
+    |> run(0)
+  end
 
-    case result do
-      :halt ->
-        hd(program)
+  def run(program, p) do
+    case Map.get(program, p) do
+      99 ->
+        Map.get(program, 0)
 
-      _ ->
-        run(result, cursor + 4)
+      op when op in 1..2 ->
+        op
+        |> calc(program, p)
+        |> run(p + 4)
     end
   end
 
-  def operate([99 | _tail], _), do: :halt
+  defp calc(op, program, p) do
+    {p1, p2, p3} = {p + 1, p + 2, p + 3}
 
-  def operate([1, r1, r2, w], program) do
-    ret = Enum.at(program, r1) + Enum.at(program, r2)
-    List.replace_at(program, w, ret)
+    r1 = Map.get(program, Map.get(program, p1))
+    r2 = Map.get(program, Map.get(program, p2))
+    w = Map.get(program, p3)
+
+    Map.put(program, w, execute(op, r1, r2))
   end
 
-  def operate([2, r1, r2, w], program) do
-    ret = Enum.at(program, r1) * Enum.at(program, r2)
-    List.replace_at(program, w, ret)
+  defp execute(1, a, b), do: a + b
+  defp execute(2, a, b), do: a * b
+
+  defp to_map(list) do
+    list
+    |> Enum.reduce({0, %{}}, fn x, {i, map} -> {i + 1, Map.put(map, i, x)} end)
+    |> elem(1)
   end
 end
