@@ -24,34 +24,23 @@ defmodule AOC.Y2019.Day04 do
   end
 
   defp valid_in_part2?(digits) do
-    never_decrease?(digits) && valid_repeating_parts(digits) != []
+    never_decrease?(digits) && has_valid_parts?(digits)
   end
 
-  defp never_decrease?([]), do: true
-  defp never_decrease?([head | tail]), do: never_decrease?(tail, head)
+  defp never_decrease?([_]), do: true
+  defp never_decrease?([a, b | _tail]) when a > b, do: false
+  defp never_decrease?([_, b | tail]), do: never_decrease?([b | tail])
 
-  defp never_decrease?([], _), do: true
-  defp never_decrease?([head | _], prev) when head < prev, do: false
-  defp never_decrease?([head | tail], _), do: never_decrease?(tail, head)
+  defp repeated?([_]), do: false
+  defp repeated?([a, a | _]), do: true
+  defp repeated?([_, a | tail]), do: repeated?([a | tail])
 
-  defp repeated?([head | tail]), do: repeated?(tail, head)
-  defp repeated?([], _), do: false
-  defp repeated?([head | _], head), do: true
-  defp repeated?([head | tail], _), do: repeated?(tail, head)
+  defp has_valid_parts?(list) do
+    parts =
+      list
+      |> Enum.chunk_by(& &1)
+      |> Enum.map(&length/1)
 
-  defp valid_repeating_parts([head | tail]) do
-    valid_repeating_parts(tail, [{head, 1}])
-  end
-
-  defp valid_repeating_parts([], acc) do
-    Enum.filter(acc, fn {_, n} -> n == 2 end)
-  end
-
-  defp valid_repeating_parts([head | tail], [{head, n} | acc_tail]) do
-    valid_repeating_parts(tail, [{head, n + 1} | acc_tail])
-  end
-
-  defp valid_repeating_parts([head | tail], acc) do
-    valid_repeating_parts(tail, [{head, 1} | acc])
+    2 in parts
   end
 end
