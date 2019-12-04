@@ -36,11 +36,8 @@ defmodule AOC.Y2019.Day04 do
   defp repeated?([_, a | tail]), do: repeated?([a | tail])
 
   defp has_valid_parts?(list) do
-    parts =
-      list
-      |> Enum.chunk_by(& &1)
-      |> Enum.map(&length/1)
-
-    2 in parts
+    list
+    |> Stream.chunk_by(& &1)
+    |> Enum.any?(&(length(&1) == 2))
   end
 end
