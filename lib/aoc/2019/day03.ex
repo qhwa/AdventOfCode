@@ -3,67 +3,53 @@ defmodule AOC.Y2019.Day03 do
   @see https://adventofcode.com/2019/day/3
   """
 
-  @line_commands "2019/day03.txt"
-                 |> AOC.Input.stream()
-                 |> Enum.to_list()
-
   def part1 do
-    [line_a, line_b] = @line_commands |> Enum.map(&parse_line/1)
-
-    {x, y} = closest_intersection(line_a, line_b)
-    abs(x) + abs(y)
+    parse_input()
+    |> all_intersection()
+    |> Stream.map(&manhanttan_distance/1)
+    |> Enum.min()
   end
 
   def part2 do
-    @line_commands
-    |> Enum.map(&parse_line/1)
-    |> Enum.reverse()
-    |> smallest_step()
+    [line_a, line_b] = parse_input()
+
+    [line_a, line_b]
+    |> all_intersection()
+    |> Stream.map(&(step_count(line_a, &1) + step_count(line_b, &1)))
+    |> Enum.min()
   end
 
-  defp parse_line(data) do
-    {segments, _} =
+  defp parse_wire(data) do
+    {lines, _} =
       data
       |> String.split(",")
-      |> Stream.map(fn <<dir::binary-size(1), n::binary>> ->
-        {String.to_atom(dir), String.to_integer(n)}
+      |> Stream.map(fn <<dir, n::binary>> ->
+        {dir, String.to_integer(n)}
       end)
-      |> Enum.reduce({[], {0, 0}}, fn {dir, len}, {lines, {x, y}} ->
-        move(dir, {x, y}, len, lines)
+      |> Enum.reduce({[], {0, 0}}, fn {dir, step}, {lines, {x, y}} ->
+        {seg, pt} = move(dir, {x, y}, step)
+        {[seg | lines], pt}
       end)
 
-    Enum.reverse(segments)
+    Enum.reverse(lines)
   end
 
-  defp move(:R, {x, y}, len, lines) do
-    new_line = {{x, y}, {x + len, y}}
-    {[new_line | lines], {x + len, y}}
+  defp move(dir, {x, y}, step) do
+    endpt =
+      case dir do
+        ?R -> {x + step, y}
+        ?L -> {x - step, y}
+        ?U -> {x, y - step}
+        ?D -> {x, y + step}
+      end
+
+    {
+      {{x, y}, endpt},
+      endpt
+    }
   end
 
-  defp move(:L, {x, y}, len, lines) do
-    new_line = {{x, y}, {x - len, y}}
-    {[new_line | lines], {x - len, y}}
-  end
-
-  defp move(:U, {x, y}, len, lines) do
-    new_line = {{x, y}, {x, y - len}}
-    {[new_line | lines], {x, y - len}}
-  end
-
-  defp move(:D, {x, y}, len, lines) do
-    new_line = {{x, y}, {x, y + len}}
-    {[new_line | lines], {x, y + len}}
-  end
-
-  def closest_intersection(line_a, line_b) do
-    line_a
-    |> all_intersection(line_b)
-    |> Enum.min_by(fn {x, y} ->
-      abs(x) + abs(y)
-    end)
-  end
-
-  def all_intersection(line_a, line_b) do
+  def all_intersection([line_a, line_b]) do
     for seg_a <- line_a,
         seg_b <- line_b,
         point <- inter(seg_a, seg_b),
@@ -84,11 +70,8 @@ defmodule AOC.Y2019.Day03 do
 
   defp inter(_, _), do: []
 
-  def smallest_step([line_a, line_b]) do
-    line_a
-    |> all_intersection(line_b)
-    |> Stream.map(&(step_count(line_a, &1) + step_count(line_b, &1)))
-    |> Enum.min()
+  def manhanttan_distance({x, y}) do
+    abs(x) + abs(y)
   end
 
   def step_count(line, p) do
@@ -118,5 +101,10 @@ defmodule AOC.Y2019.Day03 do
 
   def distance(_, _) do
     nil
+  end
+
+  defp parse_input do
+    AOC.Input.stream("2019/day03.txt")
+    |> Enum.map(&parse_wire/1)
   end
 end
