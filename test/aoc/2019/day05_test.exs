@@ -6,22 +6,22 @@ defmodule Y2019.Day05Test do
 
   describe "run_program/1" do
     test "it works" do
-      assert run([3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8], 8) == [1]
-      assert run([3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8], 2) == [0]
+      assert r([3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8], 8) == [1]
+      assert r([3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8], 2) == [0]
 
-      assert run([3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8], 7) == [1]
-      assert run([3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8], 9) == [0]
+      assert r([3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8], 7) == [1]
+      assert r([3, 9, 7, 9, 10, 9, 4, 9, 99, -1, 8], 9) == [0]
 
-      assert run([3, 3, 1108, -1, 8, 3, 4, 3, 99], 9) == [0]
-      assert run([3, 3, 1108, -1, 8, 3, 4, 3, 99], 8) == [1]
+      assert r([3, 3, 1108, -1, 8, 3, 4, 3, 99], 9) == [0]
+      assert r([3, 3, 1108, -1, 8, 3, 4, 3, 99], 8) == [1]
 
-      assert run([3, 3, 1107, -1, 8, 3, 4, 3, 99], 9) == [0]
-      assert run([3, 3, 1107, -1, 8, 3, 4, 3, 99], 7) == [1]
+      assert r([3, 3, 1107, -1, 8, 3, 4, 3, 99], 9) == [0]
+      assert r([3, 3, 1107, -1, 8, 3, 4, 3, 99], 7) == [1]
     end
 
     test "jumps work" do
-      assert run([3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, -1, 0, 1, 9], 3) == [1]
-      assert run([3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, -1, 0, 1, 9], 0) == [0]
+      assert r([3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, -1, 0, 1, 9], 3) == [1]
+      assert r([3, 12, 6, 12, 15, 1, 13, 14, 13, 4, 13, 99, -1, 0, 1, 9], 0) == [0]
     end
 
     test "integration" do
@@ -75,15 +75,15 @@ defmodule Y2019.Day05Test do
         99
       ]
 
-      assert run(p, 8) == [1000]
-      assert run(p, 1) == [999]
-      assert run(p, 9) == [1001]
+      assert r(p, 8) == [1000]
+      assert r(p, 1) == [999]
+      assert r(p, 9) == [1001]
     end
   end
 
-  defp run(program, input) do
+  defp r(program, input) do
     program
     |> to_map()
-    |> run_program(0, input)
+    |> run(%{pointer: 0, input: input, output: []})
   end
 end

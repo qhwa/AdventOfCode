@@ -13,69 +13,58 @@ defmodule AOC.Y2019.Day05 do
            |> to_map()
 
   def p1 do
-    run_program(@program, 0, 1)
+    run(@program, %{pointer: 0, input: 1, output: []})
   end
 
   def p2 do
-    run_program(@program, 0, 5)
+    run(@program, %{pointer: 0, input: 5, output: []})
   end
 
-  def example do
-    run_program(to_map([3, 9, 8, 9, 10, 9, 4, 9, 99, -1, 8]), 0, 9)
-  end
-
-  def run_program(program, p, input, output \\ []) do
+  def run(program, %{pointer: p} = context) do
     case program[p] do
       99 ->
-        output |> Enum.reverse()
+        context.output |> Enum.reverse()
 
-      3 ->
-        run_program(
-          %{program | program[p + 1] => input},
-          p + 2,
-          input,
-          output
+      op ->
+        {mutation, pt, output} = exec(program, op, p, context)
+
+        run(
+          program |> Map.merge(mutation || %{}),
+          %{context | pointer: pt, output: output ++ context.output}
         )
-
-      op when rem(op, 10) == 4 ->
-        run_program(
-          program,
-          p + 2,
-          input,
-          [read(program, mode(op), p + 1) | output]
-        )
-
-      op when rem(op, 10) == 5 ->
-        run_program(
-          program,
-          goto(program, p, op, &(&1 != 0)),
-          input,
-          output
-        )
-
-      op when rem(op, 10) == 6 ->
-        run_program(
-          program,
-          goto(program, p, op, &(&1 == 0)),
-          input,
-          output
-        )
-
-      op when rem(op, 10) == 7 ->
-        program
-        |> compare(p, op, &(&1 < &2))
-        |> run_program(p + 4, input, output)
-
-      op when rem(op, 10) == 8 ->
-        program
-        |> compare(p, op, &(&1 == &2))
-        |> run_program(p + 4, input, output)
-
-      op when rem(op, 10) in 1..2 ->
-        op
-        |> calc(program, p)
-        |> run_program(p + 4, input, output)
     end
+  end
+
+  defp exec(data, 3, p, %{input: input}) do
+    {%{data[p + 1] => input}, p + 2, []}
+  end
+
+  defp exec(data, op, p, _) when rem(op, 10) == 4 do
+    {nil, p + 2, [read(data, mode(op), p + 1)]}
+  end
+
+  defp exec(data, op, p, _) when rem(op, 10) == 5 do
+    {nil, jump(data, p, op, &(&1 != 0)), []}
+  end
+
+  defp exec(data, op, p, _) when rem(op, 10) == 6 do
+    {nil, jump(data, p, op, &(&1 == 0)), []}
+  end
+
+  defp exec(data, op, p, _) when rem(op, 10) == 7 do
+    {compare(data, p, op, &((&1 < &2 && 1) || 0)), p + 4, []}
+  end
+
+  defp exec(data, op, p, _) when rem(op, 10) == 8 do
+    {compare(data, p, op, &((&1 == &2 && 1) || 0)), p + 4, []}
+  end
+
+  defp exec(data, op, p, _) when rem(op, 10) == 1 do
+    {calc(data, p, op, &(&1 + &2)), p + 4, []}
+  end
+
+  defp exec(data, op, p, _) when rem(op, 10) == 2 do
+    {calc(data, p, op, &(&1 * &2)), p + 4, []}
   end
 
   defp mode(op, pos \\ 0) do
@@ -84,38 +73,34 @@ defmodule AOC.Y2019.Day05 do
     |> div(floor(:math.pow(10, pos + 2)))
   end
 
-  defp read(program, 0, p), do: program[program[p]]
-  defp read(program, 1, p), do: program[p]
+  defp read(data, 0, p), do: data[data[p]]
+  defp read(data, 1, p), do: data[p]
 
-  defp goto(program, p, op, if_jump) do
-    value = read(program, mode(op), p + 1)
+  defp jump(data, p, op, if_jump) do
+    value = read(data, mode(op), p + 1)
 
     if if_jump.(value) do
-      read(program, mode(op, 1), p + 2)
+      read(data, mode(op, 1), p + 2)
     else
       p + 3
     end
   end
 
-  defp compare(program, p, op, fun) do
-    r1 = read(program, mode(op), p + 1)
-    r2 = read(program, mode(op, 1), p + 2)
-    wp = program[p + 3]
+  defp compare(data, p, op, fun) do
+    r1 = read(data, mode(op), p + 1)
+    r2 = read(data, mode(op, 1), p + 2)
+    wp = data[p + 3]
 
-    ret = if fun.(r1, r2), do: 1, else: 0
-    %{program | wp => ret}
+    %{wp => fun.(r1, r2)}
   end
 
-  defp calc(op, program, p) do
+  defp calc(data, p, op, fun) do
     {p1, p2, p3} = {p + 1, p + 2, p + 3}
 
-    r1 = read(program, mode(op), p1)
-    r2 = read(program, mode(op, 1), p2)
-    wp = program[p3]
+    r1 = read(data, mode(op), p1)
+    r2 = read(data, mode(op, 1), p2)
+    wp = data[p3]
 
-    %{program | wp => execute(rem(op, 100), r1, r2)}
+    %{wp => fun.(r1, r2)}
   end
-
-  defp execute(1, a, b), do: a + b
-  defp execute(2, a, b), do: a * b
 end
