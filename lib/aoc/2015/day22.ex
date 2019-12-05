@@ -3,6 +3,8 @@ defmodule AOC.Y2015.Day22 do
   @see https://adventofcode.com/2015/day/22
   """
 
+  require Logger
+
   @hero %{hp: 50, armor: 0, mana: 500}
   @boss %{hp: 71, damage: 10}
 
@@ -15,55 +17,59 @@ defmodule AOC.Y2015.Day22 do
   ]
 
   def example do
-    # eample 1
+    Logger.configure(level: :warn)
+    # example 1
     # hero = %{hp: 10, armor: 0, mana: 250}
     # boss = %{hp: 13, damage: 8}
 
-    # eample 2
+    # example 2
     hero = %{hp: 10, armor: 0, mana: 250}
     boss = %{hp: 14, damage: 8}
 
     [{0, hero, boss, [], []}]
-    |> Stream.iterate(&map_next_round/1)
-    |> Stream.take_while(&continue?/1)
-    |> Enum.to_list()
-    |> List.flatten()
+    |> iterate()
     |> Enum.find(&win?/1)
     |> replay(hero, boss)
   end
 
   def p1 do
+    Logger.configure(level: :warn)
+
     [{0, @hero, @boss, [], []}]
-    |> Stream.iterate(&map_next_round/1)
-    |> Stream.take_while(&continue?/1)
-    |> Enum.to_list()
-    |> List.flatten()
+    |> iterate()
     |> Enum.find(&win?/1)
   end
 
-  defp map_next_round(solutions) do
-    solutions
-    |> Enum.flat_map(fn
-      {round, hero, boss, effects, used_spells} ->
-        for spell <- possible_spells(hero.mana, effects) do
-          case spell do
-            :none ->
-              {round, :lose, used_spells}
+  defp iterate(solutions, step \\ 0) do
+    ret =
+      solutions
+      |> Enum.flat_map(fn
+        {round, hero, boss, effects, used_spells} ->
+          case possible_spells(hero.mana, effects) do
+            {:ok, spells} ->
+              for spell <- spells do
+                play_round(round, spell, hero, boss, effects, used_spells)
+              end
 
             _ ->
-              play_round(round, spell, hero, boss, effects, used_spells)
+              []
           end
-        end
 
-      {_round, :win, _used} ->
-        [:halt]
+        {_, :lose, _} ->
+          []
 
-      other ->
-        [other]
-    end)
+        other ->
+          [other]
+      end)
+
+    if continue?(ret) do
+      iterate(ret, step + 1)
+    else
+      ret
+    end
   end
 
-  defp possible_spells(mana, effects) do
+  def possible_spells(mana, effects) do
     spells =
       for {name, cost} <- @spells, cost <= mana, Keyword.get(effects, name, 0) == 0 do
         {name, cost}
@@ -71,14 +77,14 @@ defmodule AOC.Y2015.Day22 do
 
     case {spells, effects} do
       {[], []} ->
-        # IO.puts("player loses because out of mana (#{mana}), and non effects available")
-        [:none]
+        Logger.info("player loses because out of mana (#{mana}), and non effects available")
+        :none
 
       {[], _} ->
-        [wait: 0]
+        {:ok, [wait: 0]}
 
       _ ->
-        spells
+        {:ok, spells}
     end
   end
 
@@ -96,18 +102,21 @@ defmodule AOC.Y2015.Day22 do
   defp play_round(round, {name, cost}, hero, boss, effects, solution) do
     # IO.inspect({hero, boss, effects}, label: round)
 
-    IO.puts("-- Player turn --")
-    IO.puts("- Player has #{hero.hp} hit points, #{hero.armor} armor, #{hero.mana} mana")
-    IO.puts("- Boss has #{boss.hp} hit points")
+    Logger.debug("-- Player turn --")
+    Logger.debug("- Player has #{hero.hp} hit points, #{hero.armor} armor, #{hero.mana} mana")
+    Logger.debug("- Boss has #{boss.hp} hit points")
 
     with {1, {effects, {h, b}}} <- {1, take_effects(effects, hero, boss, solution)},
          {:boss_alive, true} <- {:boss_alive, b.hp > 0},
          # IO.inspect("boss still alive after effects", label: round),
 
-         {2, {h, b, new_effects}} <- {2, cast(name, h, b)},
+         {2, {h, b, new_effects}} <- {2, cast({name, cost}, h, b)},
          {:boss_alive, true} <- {:boss_alive, b.hp > 0},
          # IO.inspect("hero still alive after boss attack", label: round),
 
+         Logger.debug("-- Boss turn --"),
+         Logger.debug("- Player has #{h.hp} hit points, #{h.armor} armor, #{h.mana} mana"),
+         Logger.debug("- Boss has #{b.hp} hit points"),
          {3, {effects, {h, b}}} <- {3, take_effects(effects ++ new_effects, h, b, solution)},
          {:boss_alive, true} <- {:boss_alive, b.hp > 0},
          # IO.inspect("hero still alive after boss attack", label: round) do
@@ -119,14 +128,14 @@ defmodule AOC.Y2015.Day22 do
       # IO.inspect("#{inspect(effects ++ new_effects)} after casting #{inspect name}", label: round)
       {
         round + 1,
-        h |> Map.update!(:mana, &(&1 - cost)),
+        h,
         b,
         effects,
         [name | solution]
       }
     else
       {:boss_alive, false} ->
-        # IO.puts("win after #{inspect [name | solution]}")
+        Logger.debug("win after #{inspect([name | solution])}")
         {round, :win, [name | solution]}
 
       {:hero_alive, false} ->
@@ -141,7 +150,12 @@ defmodule AOC.Y2015.Day22 do
       {hero, boss} = apply_effect(effect, h, b)
 
       case effect do
-        {_, 0} ->
+        {:shield, 1} ->
+          Logger.debug("Shield wears off, decreasing armor by 7.")
+          {[], {%{hero | armor: 0}, boss}}
+
+        {name, 1} ->
+          Logger.debug("#{name} wears off.")
           {[], {hero, boss}}
 
         {name, t} ->
@@ -150,23 +164,18 @@ defmodule AOC.Y2015.Day22 do
     end)
   end
 
-  def apply_effect({:shield, 0}, hero, boss) do
-    IO.puts("Shield wears off.")
-    {%{hero | armor: 0}, boss}
-  end
-
   def apply_effect({:shield, t}, hero, boss) do
-    IO.puts("Shield's timer is now #{t}.")
+    Logger.debug("Shield's timer is now #{t - 1}.")
     {%{hero | armor: 7}, boss}
   end
 
   def apply_effect({name, 0}, hero, boss) do
-    IO.puts("#{name} wears off.")
+    Logger.debug("#{name} wears off.")
     {hero, boss}
   end
 
   def apply_effect({:poison, t}, hero, boss) do
-    IO.puts("Poison deals 3 damage; its timer is now #{t}.")
+    Logger.debug("Poison deals 3 damage; its timer is now #{t - 1}.")
 
     {
       hero,
@@ -175,7 +184,7 @@ defmodule AOC.Y2015.Day22 do
   end
 
   def apply_effect({:recharge, t}, hero, boss) do
-    IO.puts("Recharge provides 101 mana; its timer is now #{t}.")
+    Logger.debug("Recharge provides 101 mana; its timer is now #{t - 1}.")
 
     {
       Map.update!(hero, :mana, &(&1 + 101)),
@@ -183,56 +192,68 @@ defmodule AOC.Y2015.Day22 do
     }
   end
 
-  def cast(:wait, hero, boss) do
+  def cast({:wait, _}, hero, boss) do
     {hero, boss, []}
   end
 
-  def cast(:magic_missile, hero, boss) do
-    IO.puts("Player casts Magic Missile, dealing 4 damage.")
+  def cast({:magic_missile, cost}, hero, boss) do
+    Logger.debug("Player casts Magic Missile, dealing 4 damage.")
 
     {
-      hero,
+      hero |> Map.update!(:mana, &(&1 - cost)),
       boss |> Map.update!(:hp, &(&1 - 4)),
       []
     }
   end
 
-  def cast(:drain, hero, boss) do
-    IO.puts("Player casts Drain, dealing 2 damage, and healing 2 hit points.")
+  def cast({:drain, cost}, hero, boss) do
+    Logger.debug("Player casts Drain, dealing 2 damage, and healing 2 hit points.")
 
     {
-      hero |> Map.update!(:hp, &(&1 + 2)),
+      hero |> Map.update!(:hp, &(&1 + 2)) |> Map.update!(:mana, &(&1 - cost)),
       boss |> Map.update!(:hp, &(&1 - 2)),
       []
     }
   end
 
-  def cast(:shield, hero, boss) do
+  def cast({:shield, cost}, hero, boss) do
+    Logger.debug("Player casts Shield, increasing armor by 7.")
+
     {
-      hero,
-      boss |> Map.update!(:hp, &(&1 - 2)),
+      hero |> Map.put(:armor, 7) |> Map.update!(:mana, &(&1 - cost)),
+      boss,
       [shield: 6]
     }
   end
 
-  def cast(:poison, hero, boss) do
-    {hero, boss, [poison: 6]}
+  def cast({:poison, cost}, hero, boss) do
+    Logger.debug("Player casts Poison.")
+
+    {
+      hero |> Map.update!(:mana, &(&1 - cost)),
+      boss,
+      [poison: 6]
+    }
   end
 
-  def cast(:recharge, hero, boss) do
-    IO.puts("Player casts Recharge.")
-    {hero, boss, [recharge: 5]}
+  def cast({:recharge, cost}, hero, boss) do
+    Logger.debug("Player casts Recharge.")
+
+    {
+      hero |> Map.update!(:mana, &(&1 - cost)),
+      boss,
+      [recharge: 5]
+    }
   end
 
   defp boss_attack(%{damage: damage}, %{hp: hp, armor: armor} = hero) do
     dmg = max(damage - armor, 1)
-    IO.puts("Boss attacks for #{damage} - #{armor} = #{dmg} damage!")
-    # IO.puts("boss attack: #{hp} -> #{hp - dmg} (shield: #{armor})")
+    Logger.debug("Boss attacks for #{damage} - #{armor} = #{dmg} damage!")
     %{hero | hp: hp - dmg}
   end
 
   defp continue?(solutions) do
-    should_halt = Enum.any?(solutions, &(&1 == :halt)) || Enum.all?(solutions, &lose?/1)
+    should_halt = Enum.any?(solutions, &win?/1) || Enum.all?(solutions, &lose?/1)
     !should_halt
   end
 
@@ -261,7 +282,8 @@ defmodule AOC.Y2015.Day22 do
   end
 
   defp replay({_, _, spells}, hero, boss) do
-    IO.puts("--------------- replay --------")
+    Logger.configure(level: :debug)
+    Logger.debug("--------------- replay --------")
 
     spells
     |> Enum.reverse()
