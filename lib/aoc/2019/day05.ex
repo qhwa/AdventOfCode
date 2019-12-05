@@ -14,13 +14,8 @@ defmodule AOC.Y2019.Day05 do
 
   defguard is_read(op) when rem(op, 10) == 3
 
-  def p1 do
-    run(@program, %{pointer: 0, input: 1, output: []})
-  end
-
-  def p2 do
-    run(@program, %{pointer: 0, input: 5, output: []})
-  end
+  def p1, do: run(@program, %{pointer: 0, input: 1, output: []})
+  def p2, do: run(@program, %{pointer: 0, input: 5, output: []})
 
   def run(program, %{pointer: p} = context) do
     case program[p] do
