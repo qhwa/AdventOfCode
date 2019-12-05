@@ -32,7 +32,7 @@ defmodule AOC.Y2019.Day05 do
 
         run(
           program |> Map.merge(mutation || %{}),
-          %{context | pointer: pt, output: output ++ context.output}
+          %{context | pointer: pt, output: append_output(output, context.output)}
         )
     end
   end
@@ -45,32 +45,32 @@ defmodule AOC.Y2019.Day05 do
 
     case rem(op, 10) do
       1 ->
-        {%{r3 => r1 + r2}, p + 4, []}
+        {%{r3 => r1 + r2}, p + 4, nil}
 
       2 ->
-        {%{r3 => r1 * r2}, p + 4, []}
+        {%{r3 => r1 * r2}, p + 4, nil}
 
       3 ->
-        {%{data[p + 1] => input}, p + 2, []}
+        {%{data[p + 1] => input}, p + 2, nil}
 
       4 ->
-        {nil, p + 2, [r1]}
+        {nil, p + 2, r1}
 
       5 ->
-        {nil, (r1 != 0 && r2) || p + 3, []}
+        {nil, (r1 != 0 && r2) || p + 3, nil}
 
       6 ->
-        {nil, (r1 == 0 && r2) || p + 3, []}
+        {nil, (r1 == 0 && r2) || p + 3, nil}
 
       7 ->
-        {%{r3 => (r1 < r2 && 1) || 0}, p + 4, []}
+        {%{r3 => (r1 < r2 && 1) || 0}, p + 4, nil}
 
       8 ->
-        {%{r3 => (r1 == r2 && 1) || 0}, p + 4, []}
+        {%{r3 => (r1 == r2 && 1) || 0}, p + 4, nil}
     end
   end
 
-  defp mode(op, pos \\ 1) do
+  defp mode(op, pos) do
     op
     |> rem(floor(:math.pow(10, pos + 2)))
     |> div(floor(:math.pow(10, pos + 1)))
@@ -78,4 +78,7 @@ defmodule AOC.Y2019.Day05 do
 
   defp read(data, 0, p), do: data[data[p]]
   defp read(data, 1, p), do: data[p]
+
+  defp append_output(nil, output), do: output
+  defp append_output(new, output), do: [new | output]
 end
