@@ -12,8 +12,6 @@ defmodule AOC.Y2019.Day05 do
            |> Stream.map(&String.to_integer/1)
            |> to_map()
 
-  defguard is_read(op) when rem(op, 10) == 3
-
   def p1, do: run(@program, %{pointer: 0, input: 1, output: []})
   def p2, do: run(@program, %{pointer: 0, input: 5, output: []})
 
