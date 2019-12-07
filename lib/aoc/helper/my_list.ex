@@ -13,6 +13,10 @@ defmodule Helper.MyList do
 
   def perms([]), do: [[]]
 
+  def perms(n) when is_integer(n) do
+    perms(0..(n - 1) |> Enum.to_list())
+  end
+
   def perms(list) do
     for h <- list, t <- perms(list -- [h]), do: [h | t]
   end
