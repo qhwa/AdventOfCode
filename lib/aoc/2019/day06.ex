@@ -19,8 +19,8 @@ defmodule AOC.Y2019.Day06 do
     |> Stream.map(fn arr -> Enum.map(arr, &String.to_atom/1) end)
     |> Enum.reduce(%{}, fn [c, a], map ->
       map
-      |> Map.update(c, %{children: [a]}, &%{&1 | children: [a | &1.children]})
-      |> Map.update(a, %{children: [], parent: c}, &Map.put(&1, :parent, c))
+      |> Map.update(c, %{children: [a], parent: nil}, &%{&1 | children: [a | &1.children]})
+      |> Map.update(a, %{children: [], parent: c}, &%{&1 | parent: c})
     end)
   end
 
