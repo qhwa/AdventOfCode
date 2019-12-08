@@ -44,8 +44,8 @@ defmodule AOC.Y2019.Day08 do
   defp parse() do
     File.read!("priv/data/2019/day08.txt")
     |> String.trim()
-    |> String.split("", trim: true)
-    |> Stream.map(&String.to_integer/1)
+    |> String.to_charlist()
+    |> Stream.map(&(&1 - ?0))
     |> Enum.chunk_every(25 * 6)
   end
 end
