@@ -61,7 +61,7 @@ defmodule AOC.Y2019.Day07 do
     end
   end
 
-  defp upstream(processes, current) do
+  defp upstream(processes, id) do
     processes
     |> Enum.at(rem(id + 1, length(processes)))
   end
