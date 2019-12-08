@@ -1,18 +1,9 @@
 defmodule AOC do
   @moduledoc """
-  Documentation for AOC.
+  This module defines the common behaviour of every solution's structure.
   """
 
-  @doc """
-  Hello world.
-
-  ## Examples
-
-      iex> AOC.hello()
-      :world
-
-  """
-  def hello do
-    :world
-  end
+  @callback setup() :: {:ok, term}
+  @callback p1(term) :: term
+  @callback p2(term) :: term
 end

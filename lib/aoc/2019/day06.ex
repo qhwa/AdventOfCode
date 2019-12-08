@@ -3,6 +3,8 @@ defmodule AOC.Y2019.Day06 do
   @see https://adventofcode.com/2019/day/6
   """
 
+  import Enum, only: [map: 2, reduce: 3, find_index: 2, reverse: 1]
+
   def p1, do: read_input() |> walk(:COM)
   def p2, do: read_input() |> min_distance(:YOU, :SAN)
 
@@ -16,8 +18,8 @@ defmodule AOC.Y2019.Day06 do
     |> String.trim()
     |> String.split()
     |> Stream.map(&String.split(&1, ")"))
-    |> Stream.map(fn arr -> Enum.map(arr, &String.to_atom/1) end)
-    |> Enum.reduce(%{}, fn [c, a], map ->
+    |> Stream.map(fn arr -> map(arr, &String.to_atom/1) end)
+    |> reduce(%{}, fn [c, a], map ->
       map
       |> Map.update(c, %{children: [a], parent: nil}, &%{&1 | children: [a | &1.children]})
       |> Map.update(a, %{children: [], parent: c}, &%{&1 | parent: c})
@@ -29,7 +31,7 @@ defmodule AOC.Y2019.Day06 do
 
     {n1, n2} =
       node.children
-      |> Enum.reduce({0, 0}, fn n, {c1, c2} ->
+      |> reduce({0, 0}, fn n, {c1, c2} ->
         {a, b} = walk(map, n)
         {c1 + a, c2 + b}
       end)
@@ -41,21 +43,15 @@ defmodule AOC.Y2019.Day06 do
     path1 = ancestors(map, a)
     path2 = ancestors(map, b)
 
-    for ancestor <- path1, ^ancestor <- path2 do
-      Enum.find_index(path1, &(&1 == ancestor)) +
-        Enum.find_index(path2, &(&1 == ancestor))
+    for p <- path1, p in path2 do
+      find_index(path1, &(&1 == p)) + find_index(path2, &(&1 == p))
     end
     |> Enum.min()
     |> Kernel.-(2)
   end
 
-  def ancestors(map, start) do
-    ancestors(map, start, [])
-  end
-
-  def ancestors(_map, nil, path) do
-    path |> Enum.reverse()
-  end
+  def ancestors(map, start), do: ancestors(map, start, [])
+  def ancestors(_map, nil, path), do: reverse(path)
 
   def ancestors(map, current, path) do
     ancestors(

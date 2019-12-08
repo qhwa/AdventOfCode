@@ -3,8 +3,12 @@ defmodule AOC.Y2019.Day08 do
   @see https://adventofcode.com/2019/day/8
   """
 
-  def p1, do: parse() |> least_zero_layer() |> digest()
-  def p2, do: parse() |> compose_layers() |> print()
+  @behaviour AOC
+
+  def setup, do: {:ok, parse()}
+
+  def p1(input), do: input |> least_zero_layer() |> digest()
+  def p2(input), do: input |> compose_layers() |> print()
 
   defp least_zero_layer(layers), do: Enum.min_by(layers, &count(&1, 0))
 
@@ -30,10 +34,11 @@ defmodule AOC.Y2019.Day08 do
     layer
     |> Enum.map(fn
       0 -> ' '
-      1 -> ?#
+      1 -> ?*
     end)
     |> Enum.chunk_every(25)
-    |> Enum.each(&IO.puts/1)
+    |> Enum.intersperse(?\n)
+    |> IO.puts()
   end
 
   defp parse() do
