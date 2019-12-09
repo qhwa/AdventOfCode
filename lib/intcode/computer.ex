@@ -95,14 +95,17 @@ defmodule Intcode.Computer do
 
   defp fetch_input(%{input: []}) do
     receive do
-      {:data, data} -> [data]
+      {:data, data, _} -> [data]
     end
   end
 
   defp fetch_input(%{input: input}), do: input
 
   defp output(val, nil), do: IO.puts(val)
-  defp output(val, downstream), do: send(downstream, {:output, val, self()})
+
+  defp output(val, downstream) do
+    send(downstream, {:data, val, self()})
+  end
 
   defp trim_input(ctx, nil), do: ctx
   defp trim_input(ctx, input), do: %{ctx | input: input}
