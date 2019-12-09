@@ -25,7 +25,7 @@ defmodule AOC.Y2019.Day09 do
 
   defp listen() do
     receive do
-      {:output, data, _} ->
+      {:data, data, _} ->
         IO.puts(["-> ", inspect(data)])
         listen()
 
