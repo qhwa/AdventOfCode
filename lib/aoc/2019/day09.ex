@@ -14,9 +14,13 @@ defmodule AOC.Y2019.Day09 do
   end
 
   def p2 do
-    Computer.start(@program, input: [2], downstream: self())
+    {t, _} =
+      :timer.tc(fn ->
+        Computer.start(@program, input: [2], downstream: self())
+        listen()
+      end)
 
-    listen()
+    IO.puts(["time spent: ", inspect(div(t, 1000)), "ms"])
   end
 
   defp listen() do
