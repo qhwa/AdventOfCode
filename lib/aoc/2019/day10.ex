@@ -4,44 +4,36 @@ defmodule AOC.Y2019.Day10 do
   """
 
   def p1 do
-    pts =
-      "priv/data/2019/day10.txt"
-      |> File.read!()
-      |> parse()
+    pts = read_input()
 
     pts
-    |> Stream.map(&{&1, count(&1, pts)})
-    |> Enum.max_by(fn {_, c} -> c end)
+    |> Stream.map(&asteroid_detect_count(&1, pts))
+    |> Enum.max()
   end
 
   def p2 do
-    :ok
+    pts = read_input()
+
+    c = Enum.max_by(pts, &asteroid_detect_count(&1, pts))
+
+    {{x, y}, _, _} =
+      pts
+      |> Stream.reject(&(&1 == c))
+      |> Stream.map(fn {x, y} -> {{x, y}, distance2({x, y}, c), angle({x, y}, c)} end)
+      |> Enum.sort_by(fn {_, d, r} -> {r, d} end)
+      |> Enum.chunk_by(fn {_, _, r} -> r end)
+
+      # Here's the tricky part:
+      # the length of the list above is more than 200
+      |> Enum.at(199)
+      |> hd()
+
+    x * 100 + y
   end
 
-  def example do
-    input = """
-    .#..#..###
-    ####.###.#
-    ....###.#.
-    ..###.##.#
-    ##.##.#.#.
-    ....###..#
-    ..#.#..#.#
-    #..#.#.###
-    .##...##.#
-    .....#.#..
-    """
-
-    pts = parse(input)
-
-    pts
-    |> Stream.map(&{&1, count(&1, pts)})
-    |> Enum.max_by(fn {_, c} -> c end)
-  end
-
-  defp parse(input) do
-    input
-    |> String.split("\n")
+  defp read_input do
+    "2019/day10.txt"
+    |> AOC.Input.stream()
     |> Stream.with_index()
     |> Stream.flat_map(&parse_line(&1))
     |> Enum.to_list()
@@ -57,12 +49,18 @@ defmodule AOC.Y2019.Day10 do
     end)
   end
 
-  defp count(c, pts) do
+  defp distance2({x, y}, {cx, cy}) do
+    abs(cx - x) + abs(cy - y)
+  end
+
+  defp angle({x, y}, {cx, cy}) do
+    deg = :math.atan2(x - cx, cy - y) * 180 / :math.pi()
+    if deg < 0, do: 360 + deg, else: deg
+  end
+
+  defp asteroid_detect_count(c, pts) do
     Enum.group_by(pts, &angle(&1, c))
     |> Map.keys()
     |> length()
   end
-
-  # defp angle(c, c), do: nil
-  defp angle({cx, cy}, {x, y}), do: :math.atan2(y - cy, x - cx)
 end
