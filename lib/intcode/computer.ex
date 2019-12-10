@@ -38,8 +38,8 @@ defmodule Intcode.Computer do
 
   # credo:disable-for-next-line Credo.Check.Refactor.CyclomaticComplexity
   defp exec(data, op, p, ctx) do
-    r1 = read(data, mode(op, 1), p + 1, ctx) || 0
-    r2 = read(data, mode(op, 2), p + 2, ctx) || 0
+    r1 = read(data, mode(op, 1), p + 1, ctx)
+    r2 = read(data, mode(op, 2), p + 2, ctx)
 
     r3 = write_addr(data, mode(op, 3), p + 3, ctx)
 
@@ -86,9 +86,9 @@ defmodule Intcode.Computer do
     |> div(floor(:math.pow(10, pos + 1)))
   end
 
-  defp read(data, 0, p, _), do: data[data[p]]
+  defp read(data, 0, p, _), do: Map.get(data, data[p], 0)
   defp read(data, 1, p, _), do: data[p]
-  defp read(data, 2, p, ctx), do: data[ctx.rel_pointer + data[p]]
+  defp read(data, 2, p, ctx), do: Map.get(data, ctx.rel_pointer + data[p], 0)
 
   defp write_addr(data, 0, p, _), do: data[p]
   defp write_addr(data, 2, p, ctx), do: ctx.rel_pointer + data[p]
