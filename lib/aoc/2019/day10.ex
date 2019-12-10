@@ -14,12 +14,21 @@ defmodule AOC.Y2019.Day10 do
   def p2 do
     pts = read_input()
 
-    c = Enum.max_by(pts, &asteroid_detect_count(&1, pts))
+    origin = Enum.max_by(pts, &asteroid_detect_count(&1, pts))
 
     {{x, y}, _, _} =
       pts
-      |> Stream.reject(&(&1 == c))
-      |> Stream.map(fn {x, y} -> {{x, y}, distance2({x, y}, c), angle({x, y}, c)} end)
+      |> Stream.reject(&(&1 == origin))
+
+      # data structure:
+      # {point, distance_from_origin, degree_to_origin}
+      |> Stream.map(fn {x, y} ->
+        {
+          {x, y},
+          distance2({x, y}, origin),
+          angle({x, y}, origin)
+        }
+      end)
       |> Enum.sort_by(fn {_, d, r} -> {r, d} end)
       |> Enum.chunk_by(fn {_, _, r} -> r end)
 
@@ -59,8 +68,6 @@ defmodule AOC.Y2019.Day10 do
   end
 
   defp asteroid_detect_count(c, pts) do
-    Enum.group_by(pts, &angle(&1, c))
-    |> Map.keys()
-    |> length()
+    Enum.group_by(pts, &angle(&1, c)) |> Enum.count()
   end
 end
