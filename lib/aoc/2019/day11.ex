@@ -3,11 +3,6 @@ defmodule AOC.Y2019.Day11 do
   @see http://adventofcode.com/2019/day/11
   """
 
-  @up [0, -1]
-  @left [-1, 0]
-  @down [0, 1]
-  @right [1, 0]
-
   def p1, do: run_program([]) |> Map.get(:pannels) |> Enum.count()
 
   def p2, do: run_program(pannels: %{{0, 0} => 1}) |> print()
@@ -24,7 +19,7 @@ defmodule AOC.Y2019.Day11 do
 
   defp load_program, do: Intcode.load_file("priv/data/2019/day11.txt")
 
-  defp init(opts), do: Enum.into(opts, %{pannels: %{}, pos: {0, 0}, dir: @up})
+  defp init(opts), do: Enum.into(opts, %{pannels: %{}, pos: {0, 0}, dir: [0, -1]})
 
   defp work(map, pid) do
     report_current_color(map, pid)
@@ -62,15 +57,11 @@ defmodule AOC.Y2019.Day11 do
     |> move_forward()
   end
 
-  defp turn(@up, 0), do: @left
-  defp turn(@left, 0), do: @down
-  defp turn(@down, 0), do: @right
-  defp turn(@right, 0), do: @up
-
-  defp turn([0, -1], 1), do: [1, 0]
-  defp turn([1, 0], 1), do: [0, 1]
-  defp turn([0, 1], 1), do: [-1, 0]
-  defp turn([-1, 0], 1), do: [0, -1]
+  @doc """
+  @see https://matthew-brett.github.io/teaching/rotation_2d.html#theorem
+  """
+  def turn([x, y], 0), do: [y, -x]
+  def turn([x, y], 1), do: [-y, x]
 
   defp move_forward(%{pos: {x, y}, dir: [dx, dy]} = map) do
     Map.put(map, :pos, {x + dx, y + dy})
