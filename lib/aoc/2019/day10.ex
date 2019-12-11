@@ -7,14 +7,14 @@ defmodule AOC.Y2019.Day10 do
     pts = read_input()
 
     pts
-    |> Stream.map(&asteroid_detect_count(&1, pts))
+    |> Stream.map(&numbers_of_asteroid_in_sight(&1, pts))
     |> Enum.max()
   end
 
   def p2 do
     pts = read_input()
 
-    origin = Enum.max_by(pts, &asteroid_detect_count(&1, pts))
+    origin = Enum.max_by(pts, &numbers_of_asteroid_in_sight(&1, pts))
 
     {{x, y}, _, _} =
       pts
@@ -58,6 +58,12 @@ defmodule AOC.Y2019.Day10 do
     end)
   end
 
+  defp numbers_of_asteroid_in_sight(origin, pts) do
+    pts
+    |> Enum.group_by(&angle(&1, origin))
+    |> Enum.count()
+  end
+
   defp distance2({x, y}, {cx, cy}) do
     abs(cx - x) + abs(cy - y)
   end
@@ -65,9 +71,5 @@ defmodule AOC.Y2019.Day10 do
   defp angle({x, y}, {cx, cy}) do
     deg = :math.atan2(x - cx, cy - y) * 180 / :math.pi()
     if deg < 0, do: 360 + deg, else: deg
-  end
-
-  defp asteroid_detect_count(c, pts) do
-    Enum.group_by(pts, &angle(&1, c)) |> Enum.count()
   end
 end
