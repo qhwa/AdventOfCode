@@ -8,32 +8,25 @@ defmodule AOC.Y2019.Day11 do
   @down [0, 1]
   @right [1, 0]
 
-  def p1 do
-    run_program([])
-    |> Map.get(:pannels)
-    |> Enum.count()
-  end
+  def p1, do: run_program([]) |> Map.get(:pannels) |> Enum.count()
 
-  def p2 do
-    run_program(pannels: %{{0, 0} => 1})
-    |> print()
-  end
+  def p2, do: run_program(pannels: %{{0, 0} => 1}) |> print()
 
   defp run_program(opts) do
-    pid = Intcode.Computer.start(load_program(), downstream: self())
+    pid =
+      load_program()
+      |> Intcode.Computer.start(downstream: self())
 
     opts
-    |> initialize_map()
-    |> paint_identifier(pid)
+    |> init()
+    |> work(pid)
   end
 
   defp load_program, do: Intcode.load_file("priv/data/2019/day11.txt")
 
-  defp initialize_map(opts) do
-    Enum.into(opts, %{pannels: %{}, pos: {0, 0}, dir: @up})
-  end
+  defp init(opts), do: Enum.into(opts, %{pannels: %{}, pos: {0, 0}, dir: @up})
 
-  defp paint_identifier(map, pid) do
+  defp work(map, pid) do
     report_current_color(map, pid)
 
     with {:ok, color} <- read(),
@@ -41,7 +34,7 @@ defmodule AOC.Y2019.Day11 do
       map
       |> paint_pannel(color)
       |> turn_and_move(move)
-      |> paint_identifier(pid)
+      |> work(pid)
     else
       {:halt, _} ->
         map
