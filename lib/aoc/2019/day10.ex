@@ -7,14 +7,14 @@ defmodule AOC.Y2019.Day10 do
     pts = read_input()
 
     pts
-    |> Stream.map(&numbers_of_asteroid_in_sight(&1, pts))
+    |> Stream.map(&number_of_asteroids_in_sight(&1, pts))
     |> Enum.max()
   end
 
   def p2 do
     pts = read_input()
 
-    origin = Enum.max_by(pts, &numbers_of_asteroid_in_sight(&1, pts))
+    origin = Enum.max_by(pts, &number_of_asteroids_in_sight(&1, pts))
 
     {{x, y}, _, _} =
       pts
@@ -62,7 +62,7 @@ defmodule AOC.Y2019.Day10 do
     end)
   end
 
-  defp numbers_of_asteroid_in_sight(origin, pts) do
+  defp number_of_asteroids_in_sight(origin, pts) do
     pts
     |> Enum.group_by(&angle(&1, origin))
     |> Enum.count()
