@@ -3,28 +3,41 @@ defmodule AOC.Y2019.Day11 do
   @see http://adventofcode.com/2019/day/11
   """
 
-  def p1 do
-    program = Intcode.load_file("priv/data/2019/day11.txt")
-    pid = Intcode.Computer.start(program, downstream: self())
+  @up [0, -1]
+  @left [-1, 0]
+  @down [0, 1]
+  @right [1, 0]
 
-    paint_identifier(%{pannels: %{}, pos: {0, 0}, dir: [0, -1]}, pid)
+  def p1 do
+    run_program([])
     |> Map.get(:pannels)
     |> Enum.count()
   end
 
   def p2 do
-    program = Intcode.load_file("priv/data/2019/day11.txt")
-    pid = Intcode.Computer.start(program, downstream: self())
-
-    paint_identifier(%{pannels: %{{0, 0} => 1}, pos: {0, 0}, dir: [0, -1]}, pid)
+    run_program(pannels: %{{0, 0} => 1})
     |> print()
+  end
+
+  defp run_program(opts) do
+    pid = Intcode.Computer.start(load_program(), downstream: self())
+
+    opts
+    |> initialize_map()
+    |> paint_identifier(pid)
+  end
+
+  defp load_program, do: Intcode.load_file("priv/data/2019/day11.txt")
+
+  defp initialize_map(opts) do
+    Enum.into(opts, %{pannels: %{}, pos: {0, 0}, dir: @up})
   end
 
   defp paint_identifier(map, pid) do
     report_current_color(map, pid)
 
-    with {:ok, color} <- fetch_color_instruct(),
-         {:ok, move} <- fetch_move_instruct() do
+    with {:ok, color} <- read(),
+         {:ok, move} <- read() do
       map
       |> paint_pannel(color)
       |> turn_and_move(move)
@@ -39,23 +52,15 @@ defmodule AOC.Y2019.Day11 do
     send(pid, {:data, Map.get(map.pannels, map.pos, 0), self()})
   end
 
-  defp fetch_color_instruct do
+  defp read do
     receive do
       {:data, color, _} -> {:ok, color}
       other -> other
     end
   end
 
-  defp fetch_move_instruct do
-    receive do
-      {:data, move, _} -> {:ok, move}
-      other -> other
-    end
-  end
-
   defp paint_pannel(map, color) do
-    map
-    |> Map.update!(:pannels, &Map.put(&1, map.pos, color))
+    Map.update!(map, :pannels, &Map.put(&1, map.pos, color))
   end
 
   defp turn_and_move(map, move) do
@@ -64,10 +69,10 @@ defmodule AOC.Y2019.Day11 do
     |> move_forward()
   end
 
-  defp turn([0, -1], 0), do: [-1, 0]
-  defp turn([-1, 0], 0), do: [0, 1]
-  defp turn([0, 1], 0), do: [1, 0]
-  defp turn([1, 0], 0), do: [0, -1]
+  defp turn(@up, 0), do: @left
+  defp turn(@left, 0), do: @down
+  defp turn(@down, 0), do: @right
+  defp turn(@right, 0), do: @up
 
   defp turn([0, -1], 1), do: [1, 0]
   defp turn([1, 0], 1), do: [0, 1]
@@ -75,30 +80,19 @@ defmodule AOC.Y2019.Day11 do
   defp turn([-1, 0], 1), do: [0, -1]
 
   defp move_forward(%{pos: {x, y}, dir: [dx, dy]} = map) do
-    map
-    |> Map.put(:pos, {x + dx, y + dy})
+    Map.put(map, :pos, {x + dx, y + dy})
   end
 
   defp print(%{pannels: pannels}) do
-    min_x =
+    {min_x, max_x} =
       pannels
       |> Stream.map(fn {{x, _}, _} -> x end)
-      |> Enum.min()
+      |> Enum.min_max()
 
-    max_x =
-      pannels
-      |> Stream.map(fn {{x, _}, _} -> x end)
-      |> Enum.max()
-
-    min_y =
+    {min_y, max_y} =
       pannels
       |> Stream.map(fn {{_, y}, _} -> y end)
-      |> Enum.min()
-
-    max_y =
-      pannels
-      |> Stream.map(fn {{_, y}, _} -> y end)
-      |> Enum.max()
+      |> Enum.min_max()
 
     for y <- min_y..max_y do
       for x <- min_x..max_x do
