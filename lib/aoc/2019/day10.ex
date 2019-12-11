@@ -64,12 +64,17 @@ defmodule AOC.Y2019.Day10 do
     |> Enum.count()
   end
 
-  defp distance2({x, y}, {cx, cy}) do
-    abs(cx - x) + abs(cy - y)
-  end
-
   defp angle({x, y}, {cx, cy}) do
+    # notice that we rotate it by -90 deg,
+    # because we count 0 from upside
     deg = :math.atan2(x - cx, cy - y) * 180 / :math.pi()
     if deg < 0, do: 360 + deg, else: deg
+  end
+
+  defp distance2({x, y}, {cx, cy}) do
+    # If only used for comparing,
+    # no need to use `:math.pow` here
+    # this is good enough
+    abs(cx - x) + abs(cy - y)
   end
 end
