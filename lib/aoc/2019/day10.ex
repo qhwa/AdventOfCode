@@ -29,6 +29,10 @@ defmodule AOC.Y2019.Day10 do
           angle({x, y}, origin)
         }
       end)
+
+      # We only have to do sorting exactly once
+      # as items inside tupples will effect sorting.
+      # That's the new thing I learned today.
       |> Enum.sort_by(fn {_, d, r} -> {r, d} end)
       |> Enum.chunk_by(fn {_, _, r} -> r end)
 
