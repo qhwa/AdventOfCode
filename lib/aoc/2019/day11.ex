@@ -13,6 +13,11 @@ defmodule AOC.Y2019.Day11 do
   end
 
   def p2 do
+    program = Intcode.load_file("priv/data/2019/day11.txt")
+    pid = Intcode.Computer.start(program, downstream: self())
+
+    paint_identifier(%{pannels: %{{0, 0} => 1}, pos: {0, 0}, dir: [0, -1]}, pid)
+    |> print()
   end
 
   defp paint_identifier(map, pid) do
@@ -72,5 +77,38 @@ defmodule AOC.Y2019.Day11 do
   defp move_forward(%{pos: {x, y}, dir: [dx, dy]} = map) do
     map
     |> Map.put(:pos, {x + dx, y + dy})
+  end
+
+  defp print(%{pannels: pannels}) do
+    min_x =
+      pannels
+      |> Stream.map(fn {{x, _}, _} -> x end)
+      |> Enum.min()
+
+    max_x =
+      pannels
+      |> Stream.map(fn {{x, _}, _} -> x end)
+      |> Enum.max()
+
+    min_y =
+      pannels
+      |> Stream.map(fn {{_, y}, _} -> y end)
+      |> Enum.min()
+
+    max_y =
+      pannels
+      |> Stream.map(fn {{_, y}, _} -> y end)
+      |> Enum.max()
+
+    for y <- min_y..max_y do
+      for x <- min_x..max_x do
+        case Map.get(pannels, {x, y}, 0) do
+          0 -> ' '
+          1 -> ?#
+        end
+      end
+    end
+    |> Enum.intersperse(?\n)
+    |> IO.puts()
   end
 end
