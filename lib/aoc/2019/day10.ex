@@ -21,7 +21,7 @@ defmodule AOC.Y2019.Day10 do
       |> Stream.reject(&(&1 == origin))
 
       # data structure:
-      # {point, distance_from_origin, degree_to_origin}
+      # {point, distance_to_origin, degree_to_origin}
       |> Stream.map(fn {x, y} ->
         {
           {x, y},
