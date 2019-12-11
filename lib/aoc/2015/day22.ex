@@ -80,9 +80,6 @@ defmodule AOC.Y2015.Day22 do
         Logger.info("player loses because out of mana (#{mana}), and non effects available")
         :none
 
-      {[], _} ->
-        {:ok, [wait: 0]}
-
       _ ->
         {:ok, spells}
     end
@@ -190,10 +187,6 @@ defmodule AOC.Y2015.Day22 do
       Map.update!(hero, :mana, &(&1 + 101)),
       boss
     }
-  end
-
-  def cast({:wait, _}, hero, boss) do
-    {hero, boss, []}
   end
 
   def cast({:magic_missile, cost}, hero, boss) do
