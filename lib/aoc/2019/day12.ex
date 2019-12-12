@@ -11,7 +11,7 @@ defmodule AOC.Y2019.Day12 do
   ]
 
   def p1, do: simulate(@moons, 1000) |> to_energy()
-  def p2, do: find_repeat_step(@moons)
+  def p2, do: AOC.Helper.Timer.tc(fn -> find_repeat_step(@moons) end)
 
   defp simulate(moons, steps) do
     moons
