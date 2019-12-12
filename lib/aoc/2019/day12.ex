@@ -64,7 +64,7 @@ defmodule AOC.Y2019.Day12 do
       moons |> Enum.map(to_1d.(2))
     ]
     |> Enum.map(&find_repeat_1d_step/1)
-    |> Enum.reduce(1, &lcm/2)
+    |> Enum.reduce(&lcm/2)
   end
 
   defp find_repeat_1d_step(moons_1d) do
