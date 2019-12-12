@@ -24,7 +24,7 @@ defmodule AOC.Y2019.Day12 do
 
   defp next_frame_3d(moons) do
     Enum.map(moons, fn m ->
-      vel = apply_gravities(m, moons -- [m])
+      vel = apply_gravities(m, moons)
       %{pos: move(m.pos, vel), vel: vel}
     end)
   end
@@ -56,32 +56,37 @@ defmodule AOC.Y2019.Day12 do
   end
 
   defp find_repeat_step(moons) do
-    0..2
-    |> Enum.reduce(1, fn i, step ->
-      moons
-      |> Enum.map(&{elem(&1, i), 0})
-      |> find_repeat_1d_step()
-      |> lcm(step)
-    end)
+    to_1d = fn i -> &{elem(&1, i), 0} end
+
+    [
+      moons |> Enum.map(to_1d.(0)),
+      moons |> Enum.map(to_1d.(1)),
+      moons |> Enum.map(to_1d.(2))
+    ]
+    |> Enum.map(&find_repeat_1d_step/1)
+    |> Enum.reduce(1, &lcm/2)
   end
 
-  defp find_repeat_1d_step(moons_1d), do: search_loop(next_frame_1d(moons_1d), moons_1d, 1)
-
-  defp search_loop(target, target, step), do: step
+  defp find_repeat_1d_step(moons_1d) do
+    search_loop(moons_1d, moons_1d, 0)
+  end
 
   defp search_loop(moons_1d, target, step) do
-    search_loop(next_frame_1d(moons_1d), target, step + 1)
+    case next_frame_1d(moons_1d) do
+      ^target when step > 0 ->
+        step
+
+      current ->
+        search_loop(current, target, step + 1)
+    end
   end
 
   defp next_frame_1d(moons_1d) do
-    moons_1d
-    |> Enum.map(fn {pos, v} ->
-      new_v =
-        Enum.reduce(moons_1d, v, fn {p, _}, v0 ->
-          v0 + diff(pos, p)
-        end)
-
-      {pos + new_v, new_v}
+    Enum.map(moons_1d, fn {pos, v} ->
+      Enum.reduce(moons_1d, {pos + v, v}, fn {p, _}, {pos0, v0} ->
+        d = diff(pos, p)
+        {pos0 + d, v0 + d}
+      end)
     end)
   end
 
