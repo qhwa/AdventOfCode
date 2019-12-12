@@ -71,14 +71,10 @@ defmodule AOC.Y2019.Day12 do
     search_loop(moons_1d, moons_1d, 0)
   end
 
-  defp search_loop(moons_1d, target, step) do
-    case next_frame_1d(moons_1d) do
-      ^target when step > 0 ->
-        step
+  defp search_loop(t, t, step) when step > 0, do: step
 
-      current ->
-        search_loop(current, target, step + 1)
-    end
+  defp search_loop(current, target, step) do
+    search_loop(next_frame_1d(current), target, step + 1)
   end
 
   defp next_frame_1d(moons_1d) do
