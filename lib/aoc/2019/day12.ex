@@ -3,6 +3,9 @@ defmodule AOC.Y2019.Day12 do
   @see http://adventofcode.com/2019/day/12
   """
 
+  import Kernel, except: [+: 2]
+  use AOC.Helper.Operator, [:+]
+
   @moons [
     {-19, -4, 2},
     {-9, 8, -16},
@@ -25,7 +28,7 @@ defmodule AOC.Y2019.Day12 do
   defp next_frame_3d(moons) do
     Enum.map(moons, fn m ->
       vel = apply_gravities(m, moons)
-      %{pos: apply_velocity(m.pos, vel), vel: vel}
+      %{pos: m.pos + vel, vel: vel}
     end)
   end
 
@@ -42,8 +45,6 @@ defmodule AOC.Y2019.Day12 do
   defp diff(a, a), do: 0
   defp diff(a, b) when a < b, do: 1
   defp diff(a, b) when a > b, do: -1
-
-  defp apply_velocity({x, y, z}, {vx, vy, vz}), do: {x + vx, y + vy, z + vz}
 
   defp to_energy(moons) when is_list(moons) do
     moons
