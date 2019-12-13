@@ -11,25 +11,23 @@ defmodule AOC.Y2019.Day12 do
   ]
 
   def p1, do: simulate(@moons, 1000) |> to_energy()
-  def p2, do: AOC.Helper.Timer.tc(fn -> find_repeat_step(@moons) end)
+  def p2, do: find_repeat_step(@moons)
 
-  defp simulate(moons, steps) do
+  defp simulate(moons, n) do
     moons
     |> Enum.map(&%{pos: &1, vel: {0, 0, 0}})
-    |> Stream.iterate(&next_frame_3d/1)
-    |> Stream.take(1 + steps)
-    |> Enum.take(-1)
-    |> List.last()
+    |> step(n)
   end
+
+  defp step(moons, 0), do: moons
+  defp step(moons, n), do: moons |> next_frame_3d() |> step(n - 1)
 
   defp next_frame_3d(moons) do
     Enum.map(moons, fn m ->
       vel = apply_gravities(m, moons)
-      %{pos: move(m.pos, vel), vel: vel}
+      %{pos: apply_velocity(m.pos, vel), vel: vel}
     end)
   end
-
-  defp move({x, y, z}, {dx, dy, dz}), do: {x + dx, y + dy, z + dz}
 
   defp apply_gravities(%{pos: {x0, y0, z0}, vel: vel}, rest) do
     Enum.reduce(rest, vel, fn %{pos: {x, y, z}}, {vx, vy, vz} ->
@@ -44,6 +42,8 @@ defmodule AOC.Y2019.Day12 do
   defp diff(a, a), do: 0
   defp diff(a, b) when a < b, do: 1
   defp diff(a, b) when a > b, do: -1
+
+  defp apply_velocity({x, y, z}, {vx, vy, vz}), do: {x + vx, y + vy, z + vz}
 
   defp to_energy(moons) when is_list(moons) do
     moons
