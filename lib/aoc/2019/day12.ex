@@ -33,12 +33,8 @@ defmodule AOC.Y2019.Day12 do
   end
 
   defp apply_gravities(%{pos: {x0, y0, z0}, vel: vel}, rest) do
-    Enum.reduce(rest, vel, fn %{pos: {x, y, z}}, {vx, vy, vz} ->
-      {
-        vx + diff(x0, x),
-        vy + diff(y0, y),
-        vz + diff(z0, z)
-      }
+    Enum.reduce(rest, vel, fn %{pos: {x, y, z}}, v ->
+      v + {diff(x0, x), diff(y0, y), diff(z0, z)}
     end)
   end
 
