@@ -131,11 +131,12 @@ defmodule AOC.Y2019.Day13 do
 
   defp print_loop do
     receive do
-      {:print, {data, score, inputs}, _} ->
+      {:print, {data, score, _inputs}, _} ->
         IO.write([ANSI.clear(), ANSI.home()])
         IO.puts(["\r\nscore: ", score, "\r\n"])
         IO.puts(data)
-        IO.puts(["\r", inputs])
+        # record the inputs
+        # IO.puts(["\r", inputs])
         IO.write(ANSI.reset())
     end
 
