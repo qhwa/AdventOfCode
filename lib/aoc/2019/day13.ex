@@ -51,15 +51,7 @@ defmodule AOC.Y2019.Day13 do
     end
   end
 
-  defp draw(state, {-1, 0}, score) do
-    state
-    |> Map.put({-1, 0}, score)
-  end
-
-  defp draw(state, pos, tile_id) do
-    state
-    |> Map.put(pos, tile_id)
-  end
+  defp draw(state, pos, tile_id), do: Map.put(state, pos, tile_id)
 
   defp count(state) do
     Enum.reduce(state, 0, fn
