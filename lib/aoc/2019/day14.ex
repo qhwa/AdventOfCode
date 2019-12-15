@@ -3,18 +3,39 @@ defmodule AOC.Y2019.Day14 do
   @see https://adventofcode.com/2019/day/14
   """
   def p1 do
+    {ores, _leftover} = ore_required(parse_reactions(), :FUEL, 1)
+    ores
   end
+
+  @max_ore 1_000_000_000_000
 
   def p2 do
+    reactions = parse_reactions()
+    price = p1()
+
+    min = div(@max_ore, price)
+    max = @max_ore
+
+    binary_search(min, max, reactions)
   end
 
-  def example do
-    reactions =
-      AOC.Input.stream("2019/day14.txt", &parse_reaction/1)
-      |> Enum.into(%{})
+  defp binary_search(min, max, _reactions) when min > max, do: max
 
-    {ores, _leftover} = ore_required(reactions, :FUEL, 1)
-    ores
+  defp binary_search(min, max, reactions) do
+    amount = div(min + max, 2)
+
+    {required, _} = ore_required(reactions, :FUEL, amount)
+
+    if required > @max_ore do
+      binary_search(min, amount - 1, reactions)
+    else
+      binary_search(amount + 1, max, reactions)
+    end
+  end
+
+  def parse_reactions do
+    AOC.Input.stream("2019/day14.txt", &parse_reaction/1)
+    |> Enum.into(%{})
   end
 
   @doc """
