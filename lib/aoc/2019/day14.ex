@@ -19,20 +19,6 @@ defmodule AOC.Y2019.Day14 do
     binary_search(min, max, reactions)
   end
 
-  defp binary_search(min, max, _reactions) when min > max, do: max
-
-  defp binary_search(min, max, reactions) do
-    amount = div(min + max, 2)
-
-    {required, _} = ore_required(reactions, :FUEL, amount)
-
-    if required > @max_ore do
-      binary_search(min, amount - 1, reactions)
-    else
-      binary_search(amount + 1, max, reactions)
-    end
-  end
-
   def parse_reactions do
     AOC.Input.stream("2019/day14.txt", &parse_reaction/1)
     |> Enum.into(%{})
@@ -98,6 +84,20 @@ defmodule AOC.Y2019.Day14 do
       n ->
         provide = min(n, amount)
         {provide, %{leftover | target => n - provide}}
+    end
+  end
+
+  defp binary_search(min, max, _reactions) when min > max, do: max
+
+  defp binary_search(min, max, reactions) do
+    amount = div(min + max, 2)
+
+    {required, _} = ore_required(reactions, :FUEL, amount)
+
+    if required > @max_ore do
+      binary_search(min, amount - 1, reactions)
+    else
+      binary_search(amount + 1, max, reactions)
     end
   end
 end
