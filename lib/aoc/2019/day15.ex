@@ -23,6 +23,30 @@ defmodule AOC.Y2019.Day15 do
     |> Map.merge(map2)
     |> Map.merge(cmap)
     |> print_map()
+
+    cmap |> Enum.count() |> Kernel.+(1)
+  end
+
+  def p2 do
+    [map1, map2] =
+      [
+        Task.async(fn -> solve_with_strategy(:left_side_first) end),
+        Task.async(fn -> solve_with_strategy(:right_side_first) end)
+      ]
+      |> Enum.map(&Task.await/1)
+
+    ox_spot =
+      map1
+      |> Enum.find(fn {_, v} -> v == 2 end)
+      |> elem(0)
+
+    empty_tiles =
+      [map1, map2]
+      |> Enum.map(&to_path/1)
+      |> Enum.reduce(&MapSet.union/2)
+      |> MapSet.to_list()
+
+    spread(empty_tiles, MapSet.new([ox_spot]))
   end
 
   defp solve_with_strategy(strategy) do
@@ -33,9 +57,6 @@ defmodule AOC.Y2019.Day15 do
     %{map: map} = listen(%{map: %{}, pos: {0, 0}, dir: {1, 0}, strategy: strategy, game: pid})
     Process.exit(pid, :normal)
     map
-  end
-
-  def p2 do
   end
 
   defp listen(state) do
@@ -64,7 +85,6 @@ defmodule AOC.Y2019.Day15 do
   defp move(%{dir: {1, 0}, game: game}), do: send(game, {:data, 4, self()})
 
   defp on_wall(state) do
-    # IO.inspect(:wall, label: inspect(state.pos + state.dir))
     state
     |> remember(1)
     |> turn_90_deg()
@@ -101,7 +121,6 @@ defmodule AOC.Y2019.Day15 do
   end
 
   defp on_move(state) do
-    # IO.inspect(:clear, label: inspect(state.pos + state.dir))
     state
     |> remember(0)
     |> forward()
@@ -134,9 +153,7 @@ defmodule AOC.Y2019.Day15 do
   end
 
   defp found(state) do
-    # IO.inspect(:found, label: inspect(state.pos + state.dir))
-    state
-    |> remember(2)
+    state |> remember(2)
   end
 
   defp print_map(map) do
@@ -172,13 +189,32 @@ defmodule AOC.Y2019.Day15 do
     path2 = map2 |> to_path()
 
     MapSet.intersection(path1, path2)
+    |> Stream.map(fn k -> {k, 3} end)
     |> Map.new()
   end
 
   defp to_path(map) do
     map
     |> Stream.filter(fn {_, v} -> v == 0 end)
-    |> Stream.map(fn {k, _} -> {k, 3} end)
+    |> Stream.map(fn {k, _} -> k end)
     |> MapSet.new()
+  end
+
+  defp spread(unvisited, visited, step \\ 0)
+
+  defp spread([], _, step), do: step
+
+  defp spread(unvisited, visited, step) do
+    spreaded =
+      visited
+      |> Enum.flat_map(fn tile ->
+        Enum.filter(unvisited, &(distance(&1, tile) == 1))
+      end)
+
+    spread(unvisited -- spreaded, spreaded, step + 1)
+  end
+
+  defp distance({x1, y1}, {x2, y2}) do
+    abs(x1 - x2) + abs(y1 - y2)
   end
 end
