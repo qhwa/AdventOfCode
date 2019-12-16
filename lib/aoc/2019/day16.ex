@@ -21,10 +21,7 @@ defmodule AOC.Y2019.Day16 do
     apply_phase(to_map(digits), Enum.count(digits), step)
   end
 
-  def apply_phase(digits, _, 0) do
-    0..7
-    |> Enum.map(&digits[&1])
-  end
+  def apply_phase(digits, _, 0), do: Enum.map(0..7, &digits[&1])
 
   def apply_phase(digits, len, step) do
     1..len
@@ -42,7 +39,7 @@ defmodule AOC.Y2019.Day16 do
         digest(digits_map, i - 1, pseed, acc)
 
       n ->
-        digest(digits_map, i - 1, pseed, acc + n * digits_map[i - 1])
+        digest(digits_map, i - 1, pseed, acc + n * Map.fetch!(digits_map, i - 1))
     end
   end
 
