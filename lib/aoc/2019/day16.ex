@@ -3,7 +3,7 @@ defmodule AOC.Y2019.Day16 do
   @see https://adventofcode.com/2019/day/16
   """
 
-  for size <- [8, 650, 6_500_000], pseed <- 1..size do
+  for size <- [8, 32, 650], pseed <- 1..size do
     def pos_group(unquote(size), unquote(pseed)) do
       unquote(
         0..size
@@ -93,7 +93,6 @@ defmodule AOC.Y2019.Day16 do
 
   defp last_digit(n), do: rem(abs(n), 10)
 
-  def first_eight_digits(result, offset \\ 0) do
-    0..7 |> Enum.map(&elem(result, offset + &1))
-  end
+  def first_eight_digits(result, offset \\ 0),
+    do: for(i <- 0..7, do: elem(result, offset + i))
 end
