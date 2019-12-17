@@ -22,12 +22,13 @@ defmodule AOC.Y2019.Day16 do
     |> String.to_charlist()
     |> Enum.map(&(&1 - ?0))
     |> List.duplicate(10_000)
+    |> List.flatten()
     |> read_message()
   end
 
   def read_message(digits) do
     offset = digits |> Enum.take(7) |> Integer.undigits()
-    digits |> apply_phase(100) |> first_eight_digits(offset)
+    digits |> Enum.drop(offset) |> apply_phase(100) |> first_eight_digits()
   end
 
   def apply_phase(digits, step) when is_list(digits) do
