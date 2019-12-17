@@ -3,12 +3,10 @@ defmodule AOC.Y2019.Day16 do
   @see https://adventofcode.com/2019/day/16
   """
 
-  import Helper.MyList, only: [to_map: 1]
-
-  for len <- [8, 32, 650], pseed <- 1..len do
-    def pos_group(unquote(len), unquote(pseed)) do
+  for size <- [8, 32, 650], pseed <- 1..size do
+    def pos_group(unquote(size), unquote(pseed)) do
       unquote(
-        0..len
+        0..size
         |> Enum.chunk_every(pseed)
         |> Enum.drop(1)
         |> Enum.take_every(4)
@@ -16,9 +14,9 @@ defmodule AOC.Y2019.Day16 do
       )
     end
 
-    def neg_group(unquote(len), unquote(pseed)) do
+    def neg_group(unquote(size), unquote(pseed)) do
       unquote(
-        0..len
+        0..size
         |> Enum.chunk_every(pseed)
         |> Enum.drop(3)
         |> Enum.take_every(4)
@@ -52,27 +50,34 @@ defmodule AOC.Y2019.Day16 do
   end
 
   def apply_phase(digits, step) when is_list(digits) do
-    apply_phase(to_map(digits), Enum.count(digits), step)
+    digits = List.to_tuple(digits)
+    size = tuple_size(digits)
+    apply_phase(digits, size, step)
   end
 
   def apply_phase(digits, _, 0), do: digits
 
-  def apply_phase(digits, len, step) do
-    1..len
-    |> Enum.map(fn pseed ->
-      last_digit(
-        Enum.sum(pos_group(len, pseed) |> Enum.map(&digits[&1 - 1])) -
-          Enum.sum(neg_group(len, pseed) |> Enum.map(&digits[&1 - 1]))
-      )
+  def apply_phase(digits, size, step) do
+    1..size
+    |> Enum.reduce(digits, fn pseed, acc ->
+      pos =
+        pos_group(size, pseed)
+        |> Enum.map(&elem(digits, &1 - 1))
+        |> Enum.sum()
+
+      neg =
+        neg_group(size, pseed)
+        |> Enum.map(&elem(digits, &1 - 1))
+        |> Enum.sum()
+
+      put_elem(acc, pseed - 1, last_digit(pos - neg))
     end)
-    |> apply_phase(step - 1)
+    |> apply_phase(size, step - 1)
   end
 
-  defp last_digit(n) do
-    rem(abs(n), 10)
-  end
+  defp last_digit(n), do: rem(abs(n), 10)
 
-  def first_eight_digits(map, offset \\ 0) do
-    0..7 |> Enum.map(&map[&1 + offset])
+  def first_eight_digits(result, _offset \\ 0) do
+    result |> Tuple.to_list() |> Enum.take(8)
   end
 end
