@@ -3,6 +3,8 @@ defmodule AOC.Y2019.Day16 do
   @see https://adventofcode.com/2019/day/16
   """
 
+  use Bitwise
+
   def p1 do
     "priv/data/2019/day16.txt"
     |> File.read!()
@@ -50,26 +52,31 @@ defmodule AOC.Y2019.Day16 do
 
   defp walk(_digits, size, _pseed, acc, id) when id >= size, do: acc
 
+  defp walk(digits, size, 1, _, 0) do
+    walk(digits, size, 1, elem(digits, 0), 1)
+  end
+
+  defp walk(digits, size, pseed, _, 0) do
+    walk(digits, size, pseed, 0, pseed - 1)
+  end
+
   defp walk(digits, size, pseed, acc, id) do
-    f = rem(div(id + 1, pseed), 4)
+    f = div(id + 1, pseed) &&& 0b11
 
     case f do
       0 ->
-        walk(digits, size, pseed, acc, next(id, pseed))
+        walk(digits, size, pseed, acc, id + pseed)
 
       1 ->
         walk(digits, size, pseed, acc + elem(digits, id), id + 1)
 
       2 ->
-        walk(digits, size, pseed, acc, next(id, pseed))
+        walk(digits, size, pseed, acc, id + pseed)
 
       3 ->
         walk(digits, size, pseed, acc - elem(digits, id), id + 1)
     end
   end
-
-  defp next(0, pseed), do: pseed - 1
-  defp next(id, pseed), do: id + pseed
 
   defp last_digit(n), do: rem(abs(n), 10)
 
