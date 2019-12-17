@@ -3,44 +3,6 @@ defmodule AOC.Y2019.Day16 do
   @see https://adventofcode.com/2019/day/16
   """
 
-  for size <- [8, 32, 650], pseed <- 1..size do
-    def pos_group(unquote(size), unquote(pseed)) do
-      unquote(
-        0..size
-        |> Enum.chunk_every(pseed)
-        |> Enum.drop(1)
-        |> Enum.take_every(4)
-        |> List.flatten()
-      )
-    end
-
-    def neg_group(unquote(size), unquote(pseed)) do
-      unquote(
-        0..size
-        |> Enum.chunk_every(pseed)
-        |> Enum.drop(3)
-        |> Enum.take_every(4)
-        |> List.flatten()
-      )
-    end
-  end
-
-  def pos_group(size, pseed) do
-    0..size
-    |> Enum.chunk_every(pseed)
-    |> Enum.drop(1)
-    |> Enum.take_every(4)
-    |> List.flatten()
-  end
-
-  def neg_group(size, pseed) do
-    0..size
-    |> Enum.chunk_every(pseed)
-    |> Enum.drop(3)
-    |> Enum.take_every(4)
-    |> List.flatten()
-  end
-
   def p1 do
     "priv/data/2019/day16.txt"
     |> File.read!()
@@ -78,18 +40,36 @@ defmodule AOC.Y2019.Day16 do
 
     1..size
     |> Enum.reduce(digits, fn pseed, acc ->
-      pos =
-        pos_group(size, pseed)
-        |> Enum.reduce(0, &(elem(digits, &1 - 1) + &2))
-
-      neg =
-        neg_group(size, pseed)
-        |> Enum.reduce(0, &(elem(digits, &1 - 1) + &2))
-
-      put_elem(acc, pseed - 1, last_digit(pos - neg))
+      ret = walk(digits, size, pseed)
+      put_elem(acc, pseed - 1, last_digit(ret))
     end)
     |> apply_phase(step - 1)
   end
+
+  defp walk(digits, size, pseed, acc \\ 0, id \\ 0)
+
+  defp walk(_digits, size, _pseed, acc, id) when id >= size, do: acc
+
+  defp walk(digits, size, pseed, acc, id) do
+    f = rem(div(id + 1, pseed), 4)
+
+    case f do
+      0 ->
+        walk(digits, size, pseed, acc, next(id, pseed))
+
+      1 ->
+        walk(digits, size, pseed, acc + elem(digits, id), id + 1)
+
+      2 ->
+        walk(digits, size, pseed, acc, next(id, pseed))
+
+      3 ->
+        walk(digits, size, pseed, acc - elem(digits, id), id + 1)
+    end
+  end
+
+  defp next(0, pseed), do: pseed - 1
+  defp next(id, pseed), do: id + pseed
 
   defp last_digit(n), do: rem(abs(n), 10)
 
