@@ -9,25 +9,23 @@ defmodule AOC.Y2019.Day17 do
   @program Intcode.load_file("priv/data/2019/day17.txt")
 
   def p1 do
-    Intcode.Computer.start(@program, downstream: self())
-    state = listen(%{map: %{}, pos: {0, 0}, robot: nil})
+    checksum(read_map())
+  end
 
-    print_map(state.map)
-    checksum(state.map)
+  defp read_map() do
+    @program
+    |> Intcode.Computer.function_mode()
+    |> GameMap.load()
   end
 
   def p2 do
-    Intcode.Computer.start(@program, downstream: self())
-    state = listen(%{name: :world, map: %{}, pos: {0, 0}, robot: nil})
-    print_map(state.map)
+    map = read_map()
 
     directions =
-      pre_walk(state.map, state.robot)
+      pre_walk(map, %{pos: GameMap.locate(map, ?^), dir: {0, -1}})
       |> Enum.find(&find_patterns/1)
-      |> IO.inspect(label: :good_routes)
       |> to_directions()
 
-    IO.inspect(directions, label: :directions)
     apply_directions(directions)
   end
 
@@ -36,57 +34,10 @@ defmodule AOC.Y2019.Day17 do
   end
 
   defp apply_directions(directions) do
-    monitor =
-      spawn(fn ->
-        listen(%{name: :robot, map: %{}, pos: {0, 0}, robot: nil})
-      end)
-
     @program
     |> Map.put(0, 2)
-    |> Intcode.Computer.start(downstream: monitor, input: directions)
+    |> Intcode.Computer.function_mode(input: directions)
   end
-
-  defp listen(%{map: map, pos: pos} = state) do
-    receive do
-      {:data, 10, _} ->
-        {_, y} = pos
-
-        %{state | pos: {0, y + 1}}
-        |> listen()
-
-      {:data, data, _} ->
-        %{state | map: add_object(map, pos, data)}
-        |> on_object(data)
-        |> Map.update!(:pos, &(&1 + {1, 0}))
-        |> listen()
-
-      {:halt, _} ->
-        # IO.inspect(:program_halt, label: inspect(Map.get(state, :name)))
-        state
-
-      other ->
-        IO.inspect({:recieve, other})
-        listen(state)
-    end
-  end
-
-  defp on_object(state, data) when data in '^>v<',
-    do: %{state | robot: %{pos: state.pos, dir: to_dir(data)}}
-
-  defp on_object(state, ?#), do: state
-  defp on_object(state, ?.), do: state
-
-  defp on_object(state, data) do
-    IO.puts(<<data>>)
-    state
-  end
-
-  def to_dir(?^), do: {0, -1}
-  def to_dir(?<), do: {-1, 0}
-  def to_dir(?v), do: {0, 1}
-  def to_dir(?>), do: {1, 0}
-
-  defp add_object(map, pos, data), do: Map.put(map, pos, data)
 
   defp checksum(map) do
     map
@@ -100,45 +51,6 @@ defmodule AOC.Y2019.Day17 do
       Map.get(map, pos + {-1, 0}) == 35 &&
       Map.get(map, pos + {0, 1}) == 35 &&
       Map.get(map, pos + {0, -1}) == 35
-  end
-
-  defp print_map(map) do
-    {min_x, max_x} =
-      map
-      |> Stream.map(fn {{x, _}, _} -> x end)
-      |> Enum.min_max()
-
-    {min_y, max_y} =
-      map
-      |> Stream.map(fn {{_, y}, _} -> y end)
-      |> Enum.min_max()
-
-    for y <- min_y..max_y do
-      for x <- min_x..max_x do
-        print_tile(Map.get(map, {x, y}), {x, y})
-      end
-    end
-    |> Enum.intersperse([?\r, ?\n])
-    |> List.flatten()
-    |> IO.puts()
-  end
-
-  defp print_tile(nil, _), do: ' '
-  defp print_tile(n, _), do: n
-
-  def parse_map(src) do
-    src
-    |> String.split("\n")
-    |> Enum.with_index()
-    |> Enum.flat_map(fn {line, y} ->
-      line
-      |> String.to_charlist()
-      |> Enum.with_index()
-      |> Enum.map(fn {char, x} ->
-        {{x, y}, char}
-      end)
-    end)
-    |> Enum.into(%{})
   end
 
   def pre_walk(map, robot) do

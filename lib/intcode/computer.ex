@@ -11,6 +11,10 @@ defmodule Intcode.Computer do
     end)
   end
 
+  def function_mode(program, opts \\ []) do
+    run(program, build_context(opts))
+  end
+
   defp build_context(opts) do
     opts
     |> Enum.into(%{})
@@ -20,18 +24,18 @@ defmodule Intcode.Computer do
   def run(program, %{pointer: p, downstream: ds} = context) do
     case program[p] do
       99 ->
-        send(ds, {:halt, self()})
-        :halt
+        unless is_nil(ds), do: send(ds, {:halt, self()})
+        Enum.reverse(context.output)
 
       op ->
-        %{mem: mem, buffer: input, pt: pt, rel_pt: rel_pt} =
+        %{mem: mem, buffer: input, pt: pt, rel_pt: rel_pt, output: out} =
           program
           |> exec(op, p, context)
           |> SideEffect.__struct__()
 
         run(
           program |> Map.merge(mem || %{}),
-          context |> trim_input(input) |> advance_pt(pt) |> advance_rel_pt(rel_pt)
+          context |> trim_input(input) |> output(out) |> advance_pt(pt) |> advance_rel_pt(rel_pt)
         )
     end
   end
@@ -60,8 +64,7 @@ defmodule Intcode.Computer do
         }
 
       4 ->
-        output(r1, ctx.downstream)
-        %{pt: 2}
+        %{pt: 2, output: r1}
 
       5 ->
         %{pt: (r1 != 0 && {:goto, r2}) || 3}
@@ -101,11 +104,15 @@ defmodule Intcode.Computer do
 
   defp fetch_input(%{input: input}), do: input
 
-  defp output(val, nil), do: IO.puts(val)
+  defp output(ctx, nil), do: ctx
 
-  defp output(val, downstream) do
-    send(downstream, {:data, val, self()})
+  defp output(%{downstream: ds} = ctx, val) when not is_nil(ds) do
+    send(ds, {:data, val, self()})
+    ctx
   end
+
+  defp output(%{output: buffer} = ctx, val),
+    do: %{ctx | output: [val | buffer]}
 
   defp trim_input(ctx, nil), do: ctx
   defp trim_input(ctx, input), do: %{ctx | input: input}

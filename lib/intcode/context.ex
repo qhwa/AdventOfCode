@@ -6,8 +6,9 @@ defmodule Intcode.Context do
   - `pointer`: cursor of the program currently pointing at;
   - `rel_pointer`: the relative pointer cursor;
   - `input`: the input buffer;
-  - `downstream`: where output will be sent. when `downstream` is null, 
-    output is directly printed on screen and discarded.
+  - `downstream`: where output will be sent. when `downstream` is nil, 
+    output saved in `output` message buffer for further read. The buffer
+    will be cleared after read.
   """
-  defstruct pointer: 0, rel_pointer: 0, input: [], downstream: nil
+  defstruct pointer: 0, rel_pointer: 0, input: [], downstream: nil, output: []
 end

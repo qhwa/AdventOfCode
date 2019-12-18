@@ -8,6 +8,8 @@ defmodule Intcode.SideEffect do
   - `%SideEffect{pt: 5}` means advance the program pointer by 5;
   - `%SideEffect{pt: {:goto, 50}}` means set the program pointer to 50;
   - `%SideEffect{rel_pt: 123}` means set the program **relative pointer** to 123;
+  - `%SideEffect{rel_pt: 123}` means set the program **relative pointer** to 123;
+  - `%SideEffect{output: 123}` means that an output of 123 is produced.
   """
-  defstruct [:mem, :buffer, :pt, :rel_pt]
+  defstruct [:mem, :buffer, :pt, :rel_pt, :output]
 end
