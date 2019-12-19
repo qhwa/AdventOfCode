@@ -59,10 +59,35 @@ defmodule GameMap do
     |> IO.puts()
   end
 
+  @doc """
+  Locate a target character on map. Returns the location it is.
+  """
   def locate(map, char) do
     case Enum.find(map, &(elem(&1, 1) == char)) do
       {pos, ^char} -> pos
       nil -> nil
     end
+  end
+
+  @doc """
+  Get all locations
+  """
+  def locations(map, locater \\ fn _, _, _ -> true end)
+
+  def locations(map, locater) do
+    check =
+      case Function.info(locater, :arity) do
+        {:arity, 1} -> fn p, _, _ -> locater.(p) end
+        {:arity, 2} -> fn p, _, map -> locater.(p, map) end
+        {:arity, 3} -> &locater.(&1, &2, &3)
+      end
+
+    Enum.reduce(map, [], fn
+      {{x, y}, v}, acc ->
+        if check.({x, y}, v, map), do: [{x, y} | acc], else: acc
+
+      _, acc ->
+        acc
+    end)
   end
 end

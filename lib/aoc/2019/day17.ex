@@ -9,7 +9,7 @@ defmodule AOC.Y2019.Day17 do
   @program Intcode.load_file("priv/data/2019/day17.txt")
 
   def p1 do
-    checksum(read_map())
+    read_map() |> checksum()
   end
 
   defp read_map() do
@@ -41,7 +41,7 @@ defmodule AOC.Y2019.Day17 do
 
   defp checksum(map) do
     map
-    |> key_stops(&intersection?/2)
+    |> intersections()
     |> Stream.map(fn {x, y} -> x * y end)
     |> Enum.sum()
   end
@@ -56,9 +56,7 @@ defmodule AOC.Y2019.Day17 do
   def pre_walk(map, robot) do
     grids =
       map
-      |> key_stops()
-      |> Enum.to_list()
-      |> Kernel.++(key_stops(map, &intersection?/2) |> Enum.to_list())
+      |> intersections()
 
     pre_walk(map, robot, [], grids)
     |> Stream.filter(fn
@@ -180,16 +178,14 @@ defmodule AOC.Y2019.Day17 do
     ]
   end
 
-  defp key_stops(map, checker \\ fn _, _ -> true end) do
-    map
-    |> Stream.filter(fn
-      {pos, 35} ->
-        checker.(pos, map)
-
-      {_, _} ->
-        false
+  defp intersections(map) do
+    GameMap.locations(map, fn {x, y}, map ->
+      map[{x, y}] == ?# and
+        map[{x + 1, y}] == ?# and
+        map[{x - 1, y}] == ?# and
+        map[{x, y + 1}] == ?# and
+        map[{x, y - 1}] == ?#
     end)
-    |> Stream.map(fn {pos, _} -> pos end)
   end
 
   def to_directions(nil) do
