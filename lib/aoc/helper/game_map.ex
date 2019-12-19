@@ -6,20 +6,18 @@ defmodule GameMap do
   def load_file(path) do
     path
     |> File.read!()
-    |> load()
+    |> parse()
   end
 
   @doc """
   Load map from text.
   """
-  def load(source) when is_binary(source) do
+  def parse(source) when is_binary(source) do
     source
     |> String.trim()
     |> String.to_charlist()
-    |> load()
+    |> parse()
   end
-
-  def load(source) when is_list(source), do: parse(source)
 
   def parse(src) do
     _parse(src, %{}, 0, 0)

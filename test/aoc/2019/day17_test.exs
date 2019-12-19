@@ -19,6 +19,93 @@ defmodule Y2019.Day17Test do
     test "it works" do
       routes = ~w[R 1 R 1 R 1 L 2 L 2 L 2 R 4 R 4 R 4 R 1 R 1 R 1 R 4]
       assert find_patterns(routes) == {["R1", "R1", "R1"], ["L2", "L2", "L2"], ["R4"]}
+
+      routes = [
+        "R",
+        6,
+        "R",
+        6,
+        "R",
+        8,
+        "L",
+        10,
+        "L",
+        4,
+        "R",
+        6,
+        "L",
+        10,
+        "R",
+        8,
+        "R",
+        6,
+        "L",
+        10,
+        "R",
+        8,
+        "R",
+        6,
+        "R",
+        6,
+        "R",
+        8,
+        "L",
+        10,
+        "L",
+        4,
+        "L",
+        4,
+        "L",
+        12,
+        "R",
+        6,
+        "L",
+        10,
+        "R",
+        6,
+        "R",
+        6,
+        "R",
+        8,
+        "L",
+        10,
+        "L",
+        4,
+        "L",
+        4,
+        "L",
+        12,
+        "R",
+        6,
+        "L",
+        10,
+        "R",
+        6,
+        "R",
+        6,
+        "R",
+        8,
+        "L",
+        10,
+        "L",
+        4,
+        "L",
+        4,
+        "L",
+        12,
+        "R",
+        6,
+        "L",
+        10,
+        "R",
+        6,
+        "L",
+        10,
+        "R",
+        8
+      ]
+
+      assert find_patterns(routes) != nil
     end
 
     test "it works again" do
@@ -47,7 +134,7 @@ defmodule Y2019.Day17Test do
         ....#...#......
         ....#####......
         """
-        |> parse_map()
+        |> GameMap.parse()
         |> pre_walk(%{pos: {0, 6}, dir: {0, -1}})
 
       assert Enum.all?(solutions, fn sol ->

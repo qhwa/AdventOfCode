@@ -36,4 +36,45 @@ defmodule Helper.MyList do
     |> Enum.reduce({0, %{}}, fn x, {i, map} -> {i + 1, Map.put(map, i, x)} end)
     |> elem(1)
   end
+
+  @doc """
+  Split a list into multiple parts with a pattern of another list.
+
+  ## Example
+
+  iex> split_by([1, 2, 3, 4, 2, 10], [2])
+  [[1], [3, 4], [10]]
+
+  iex> split_by([1, 2, 3, 4, 2, 10], [2, 3])
+  [[1], [4, 2, 10]]
+
+  iex> split_by([0, 1, 2, 1, 2, 1, 2, 1], [1, 2, 1])
+  [[0], [2]]
+
+  iex> split_by([1, 1, 2, 2, 2, 2, 2, 3], [2, 2])
+  [[1, 1], [2, 3]]
+  """
+  def split_by(list, []), do: list
+
+  def split_by(list, pattern) do
+    _split_by(list, [], [], pattern, length(pattern))
+  end
+
+  defp _split_by([], [], collected, _parts, _size), do: Enum.reverse(collected)
+
+  defp _split_by(list, buffer, collected, parts, size) when length(list) < size do
+    buffer = Enum.reverse(list) ++ buffer
+    _split_by([], [], collect(collected, buffer), parts, size)
+  end
+
+  defp _split_by([head | tail] = list, buffer, collected, pattern, size) do
+    if head == hd(pattern) and Enum.take(list, size) == pattern do
+      _split_by(Enum.drop(tail, size - 1), [], collect(collected, buffer), pattern, size)
+    else
+      _split_by(tail, [head | buffer], collected, pattern, size)
+    end
+  end
+
+  defp collect(collected, []), do: collected
+  defp collect(collected, buffer), do: [Enum.reverse(buffer) | collected]
 end
