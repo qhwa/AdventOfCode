@@ -28,7 +28,7 @@ defmodule GameMapTest do
   test "load/1", %{map: map} do
     assert %{{0, 0} => ?#} = map
     assert map[{8, 11}] == ?#
-    assert map[{1, 11}] == ?.
+    assert map[{1, 11}] == nil
     assert map[{0, 6}] == ?^
   end
 
