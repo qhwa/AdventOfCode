@@ -15,105 +15,6 @@ defmodule Y2019.Day17Test do
     end
   end
 
-  describe "find_patterns/1" do
-    test "it works" do
-      routes = ~w[R 1 R 1 R 1 L 2 L 2 L 2 R 4 R 4 R 4 R 1 R 1 R 1 R 4]
-      assert find_patterns(routes) == {["R1", "R1", "R1"], ["L2", "L2", "L2"], ["R4"]}
-
-      routes = [
-        "R",
-        6,
-        "R",
-        6,
-        "R",
-        8,
-        "L",
-        10,
-        "L",
-        4,
-        "R",
-        6,
-        "L",
-        10,
-        "R",
-        8,
-        "R",
-        6,
-        "L",
-        10,
-        "R",
-        8,
-        "R",
-        6,
-        "R",
-        6,
-        "R",
-        8,
-        "L",
-        10,
-        "L",
-        4,
-        "L",
-        4,
-        "L",
-        12,
-        "R",
-        6,
-        "L",
-        10,
-        "R",
-        6,
-        "R",
-        6,
-        "R",
-        8,
-        "L",
-        10,
-        "L",
-        4,
-        "L",
-        4,
-        "L",
-        12,
-        "R",
-        6,
-        "L",
-        10,
-        "R",
-        6,
-        "R",
-        6,
-        "R",
-        8,
-        "L",
-        10,
-        "L",
-        4,
-        "L",
-        4,
-        "L",
-        12,
-        "R",
-        6,
-        "L",
-        10,
-        "R",
-        6,
-        "L",
-        10,
-        "R",
-        8
-      ]
-
-      assert find_patterns(routes) != nil
-    end
-
-    test "it works again" do
-      routes = ~w[R 8 R 8 R 4 R 4 R 8 L 6 L 2 R 4 R 4 R 8 R 8 R 8 L 6 L 2]
-      assert Enum.member?(find_all_patterns(routes), {~w[R8 R8], ~w[R4 R4 R8], ~w[L6 L2]})
-    end
-  end
-
   describe "prewalk" do
     test "it works" do
       solutions =
@@ -171,6 +72,64 @@ defmodule Y2019.Day17Test do
                "L",
                2
              ])
+    end
+  end
+
+  describe "working_patten?/2" do
+    test "it works" do
+      routes = [
+        "R6",
+        "R6",
+        "R8",
+        "L10",
+        "L4",
+        "R6",
+        "L10",
+        "R8",
+        "R6",
+        "L10",
+        "R8",
+        "R6",
+        "R6",
+        "R8",
+        "L10",
+        "L4",
+        "L4",
+        "L12",
+        "R6",
+        "L10",
+        "R6",
+        "R6",
+        "R8",
+        "L10",
+        "L4",
+        "L4",
+        "L12",
+        "R6",
+        "L10",
+        "R6",
+        "R6",
+        "R8",
+        "L10",
+        "L4",
+        "L4",
+        "L12",
+        "R6",
+        "L10",
+        "R6",
+        "L10",
+        "R8"
+      ]
+
+      assert working_patten?(
+               routes,
+               {["R6", "R6", "R8", "L10", "L4"], ["R6", "L10", "R8"], ["L4", "L12", "R6", "L10"]}
+             )
+    end
+
+    test "it works again" do
+      routes = ~w[R8 R8 R4 R4 R8 L6 L2 R4 R4 R8 R8 R8 L6 L2]
+      assert working_patten?(routes, {~w[R8 R8], ~w[R4 R4 R8], ~w[L6 L2]})
     end
   end
 end

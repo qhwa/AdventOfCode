@@ -4,7 +4,7 @@ defmodule AOC.Y2019.Day17 do
   """
 
   import Kernel, except: [+: 2]
-  import Helper.MyList, only: [split_by: 2]
+  import Helper.MyList, only: [split_by: 2, perms: 1]
 
   use AOC.Helper.Operator, [:+]
 
@@ -28,23 +28,10 @@ defmodule AOC.Y2019.Day17 do
       |> Enum.find(&find_patterns/1)
       |> to_directions()
 
-    apply_directions(directions)
-  end
-
-  def p2_manually do
-    'A,B,B,A,C,A,C,A,C,B\nR,6,R,6,R,8,L,10,L,4\nR,6,L,10,R,8\nL,4,L,12,R,6,L,10\nn\n'
-    |> apply_directions()
-    |> Enum.take(-1)
-  end
-
-  defp apply_directions(nil) do
-    {:error, nil}
-  end
-
-  defp apply_directions(directions) do
     @program
     |> Map.put(0, 2)
     |> Intcode.Computer.function_mode(input: directions)
+    |> Enum.take(-1)
   end
 
   defp p1_checksum(map) do
@@ -54,26 +41,19 @@ defmodule AOC.Y2019.Day17 do
     |> Enum.sum()
   end
 
-  def intersection?(pos, map) do
-    Map.get(map, pos + {1, 0}) == 35 &&
-      Map.get(map, pos + {-1, 0}) == 35 &&
-      Map.get(map, pos + {0, 1}) == 35 &&
-      Map.get(map, pos + {0, -1}) == 35
-  end
-
   def pre_walk(map, robot) do
     grids =
       map
       |> GameMap.locations(fn _, v, _ -> v == ?# end)
       |> Kernel.++(GameMap.intersections(map))
 
-    pre_walk(map, robot, [], grids)
+    map
+    |> pre_walk(robot, [], grids)
     |> Stream.filter(fn
-      {:dead, _} -> false
       {:ok, _} -> true
+      _ -> false
     end)
-    |> Stream.map(fn {_, routes} -> routes end)
-    |> Enum.to_list()
+    |> Enum.map(fn {_, routes} -> routes end)
   end
 
   defp pre_walk(_map, _robot, routes, []) do
@@ -81,15 +61,35 @@ defmodule AOC.Y2019.Day17 do
   end
 
   defp pre_walk(map, %{pos: pos} = robot, routes, remain) do
+    forward = fn ->
+      pre_walk(
+        map,
+        forward_robot(robot),
+        forward_routes(routes),
+        remain -- [robot.pos]
+      )
+    end
+
+    turn_lr = fn dir ->
+      robot = turn(robot, dir) |> forward_robot()
+
+      pre_walk(
+        map,
+        robot,
+        forward_routes(turn_routes(routes, dir)),
+        remain -- [pos, robot.pos]
+      )
+    end
+
     case aheads(map, robot, remain) do
       [_, ?#, _] ->
-        [forward(map, robot, routes, remain)]
+        [forward.()]
 
       [?#, _, _] ->
-        [turn_left(map, robot, routes, remain)]
+        [turn_lr.(:left)]
 
       [_, _, ?#] ->
-        [turn_right(map, robot, routes, remain)]
+        [turn_lr.(:right)]
 
       [nil, nil, nil] ->
         case remain do
@@ -101,37 +101,6 @@ defmodule AOC.Y2019.Day17 do
         end
     end
     |> List.flatten()
-  end
-
-  def forward(map, robot, routes, remain) do
-    pre_walk(
-      map,
-      forward_robot(robot),
-      forward_routes(routes),
-      remain -- [robot.pos]
-    )
-  end
-
-  def turn_left(map, %{pos: pos} = robot, routes, remain) do
-    robot = turn(robot, :left) |> forward_robot()
-
-    pre_walk(
-      map,
-      robot,
-      forward_routes(turn_routes(routes, :left)),
-      remain -- [pos, robot.pos]
-    )
-  end
-
-  def turn_right(map, %{pos: pos} = robot, routes, remain) do
-    robot = turn(robot, :right) |> forward_robot()
-
-    pre_walk(
-      map,
-      robot,
-      forward_routes(turn_routes(routes, :right)),
-      remain -- [pos, robot.pos]
-    )
   end
 
   def forward_robot(%{pos: pos, dir: dir} = robot) do
@@ -171,9 +140,6 @@ defmodule AOC.Y2019.Day17 do
   def turn(%{dir: {dx, dy}} = robot, :left), do: %{robot | dir: {dy, -dx}}
   def turn(%{dir: {dx, dy}} = robot, :right), do: %{robot | dir: {-dy, dx}}
 
-  def to_directions(nil) do
-  end
-
   def to_directions(routes) do
     {a, b, c} = find_patterns(routes)
 
@@ -189,7 +155,7 @@ defmodule AOC.Y2019.Day17 do
     [main_route, function_cmd(a), function_cmd(b), function_cmd(c)]
     |> Enum.intersperse([?\n])
     |> List.flatten()
-    |> Kernel.++([?\n])
+    |> Kernel.++([?\n, ?n, ?\n])
   end
 
   def find_patterns(routes) do
@@ -204,46 +170,52 @@ defmodule AOC.Y2019.Day17 do
   end
 
   defp pattern_perms(routes) do
-    possibilities =
-      for a <- group([routes]),
-          b <- group(split_by(routes, a)),
-          c <- group(split_by(split_by(routes, a), b)) do
-        {a, b, c}
-      end
+    for a <- group(routes),
+        after_a = apply_pattern(routes, a),
+        b <- group(after_a),
+        nil not in b,
+        after_b = apply_pattern(after_a, b),
+        c <- group(after_b),
+        nil not in c do
+      {a, b, c}
+    end
   end
 
-  defp working_patten?(routes, {a, b, c}) do
-    Enum.count(a) + Enum.count(b) + Enum.count(c) >= 6 and
-      routes
-      |> split_by(a)
-      |> split_by(b)
-      |> split_by(c)
-      |> Kernel.==([])
+  def group(routes) do
+    1..7
+    |> Enum.map(&Enum.take(routes, &1))
+    |> Enum.filter(&(String.length(Enum.join(&1, ",")) <= 20))
   end
 
-  def find_all_patterns(routes) do
-    routes =
-      routes
-      |> Enum.chunk_every(2)
-      |> Enum.map(&Enum.join/1)
-
-    routes
-    |> pattern_perms()
-    |> Enum.filter(&working_patten?(routes, &1))
+  def apply_pattern(routes, pattern) do
+    split_by(routes, pattern)
+    |> Enum.intersperse([nil])
+    |> List.flatten()
+    |> Enum.drop_while(&is_nil/1)
   end
 
-  def group(all) do
-    all
-    |> Enum.flat_map(fn routes ->
-      1..7
-      |> Enum.map(&Enum.take(routes, &1))
-      |> Enum.filter(&(String.length(Enum.join(&1, ",")) <= 20))
+  def working_patten?(routes, {a, b, c}) do
+    perms([a, b, c])
+    |> Enum.any?(&_working_patten?(routes, &1))
+  end
+
+  def _working_patten?(routes, patterns) do
+    patterns
+    |> Enum.reduce(routes, fn p, acc ->
+      acc
+      |> split_by(p)
+      |> Enum.intersperse(nil)
+      |> List.flatten()
     end)
-    |> Enum.uniq()
+    |> Enum.all?(&is_nil/1)
   end
 
   def function_cmd(a) do
-    a |> Enum.join(",") |> String.to_charlist()
+    a
+    |> Enum.map(fn <<dir::binary-size(1), len::binary>> -> [dir, len] end)
+    |> List.flatten()
+    |> Enum.join(",")
+    |> String.to_charlist()
   end
 
   def turn_routes(routes, :left), do: [0, "L" | routes]
