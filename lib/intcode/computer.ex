@@ -111,8 +111,9 @@ defmodule Intcode.Computer do
     ctx
   end
 
-  defp output(%{output: buffer} = ctx, val),
-    do: %{ctx | output: [val | buffer]}
+  defp output(%{output: buffer} = ctx, val) do
+    %{ctx | output: [val | buffer]}
+  end
 
   defp trim_input(ctx, nil), do: ctx
   defp trim_input(ctx, input), do: %{ctx | input: input}

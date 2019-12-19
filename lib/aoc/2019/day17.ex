@@ -29,6 +29,12 @@ defmodule AOC.Y2019.Day17 do
     apply_directions(directions)
   end
 
+  def p2_manually do
+    'A,B,B,A,C,A,C,A,C,B\nR,6,R,6,R,8,L,10,L,4\nR,6,L,10,R,8\nL,4,L,12,R,6,L,10\nn\n'
+    |> apply_directions()
+    |> Enum.take(-1)
+  end
+
   defp apply_directions(nil) do
     {:error, nil}
   end
