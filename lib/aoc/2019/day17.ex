@@ -9,7 +9,7 @@ defmodule AOC.Y2019.Day17 do
   @program Intcode.load_file("priv/data/2019/day17.txt")
 
   def p1 do
-    read_map() |> checksum()
+    read_map() |> p1_checksum()
   end
 
   defp read_map() do
@@ -39,7 +39,7 @@ defmodule AOC.Y2019.Day17 do
     |> Intcode.Computer.function_mode(input: directions)
   end
 
-  defp checksum(map) do
+  defp p1_checksum(map) do
     map
     |> GameMap.intersections()
     |> Stream.map(fn {x, y} -> x * y end)
