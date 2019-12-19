@@ -90,4 +90,17 @@ defmodule GameMap do
         acc
     end)
   end
+
+  @doc """
+  Get all intersections in a list.
+  """
+  def intersections(map) do
+    GameMap.locations(map, fn {x, y}, v, map ->
+      v == ?# and
+        map[{x + 1, y}] == ?# and
+        map[{x - 1, y}] == ?# and
+        map[{x, y + 1}] == ?# and
+        map[{x, y - 1}] == ?#
+    end)
+  end
 end

@@ -41,7 +41,7 @@ defmodule AOC.Y2019.Day17 do
 
   defp checksum(map) do
     map
-    |> intersections()
+    |> GameMap.intersections()
     |> Stream.map(fn {x, y} -> x * y end)
     |> Enum.sum()
   end
@@ -56,7 +56,7 @@ defmodule AOC.Y2019.Day17 do
   def pre_walk(map, robot) do
     grids =
       map
-      |> intersections()
+      |> GameMap.intersections()
 
     pre_walk(map, robot, [], grids)
     |> Stream.filter(fn
@@ -176,16 +176,6 @@ defmodule AOC.Y2019.Day17 do
       Map.get(map, pos + {0, 1}),
       Map.get(map, pos + {0, -1})
     ]
-  end
-
-  defp intersections(map) do
-    GameMap.locations(map, fn {x, y}, map ->
-      map[{x, y}] == ?# and
-        map[{x + 1, y}] == ?# and
-        map[{x - 1, y}] == ?# and
-        map[{x, y + 1}] == ?# and
-        map[{x, y - 1}] == ?#
-    end)
   end
 
   def to_directions(nil) do

@@ -54,13 +54,12 @@ defmodule GameMapTest do
     locations =
       GameMap.locations(map, fn {x, y}, map ->
         map[{x, y}] == ?# and
-          map[{x + 1, y}] == ?# and
-          map[{x - 1, y}] == ?# and
-          map[{x, y + 1}] == ?# and
-          map[{x, y - 1}] == ?#
+          x == 0 and
+          map[{x + 1, y}] == nil and
+          map[{x, y + 1}] == nil
       end)
 
-    assert MapSet.new(locations) == MapSet.new([{6, 6}, {12, 8}, {8, 10}, {8, 8}])
+    assert locations == [{0, 2}]
   end
 
   test "locations/1 works with customer check function of arity 1", %{map: map} do
@@ -71,5 +70,10 @@ defmodule GameMapTest do
   test "locations/1 works with customer check function of arity 3", %{map: map} do
     locations = GameMap.locations(map, fn _pos, v, _map -> v != ?# end)
     assert locations == [{0, 6}]
+  end
+
+  test "intersections/1", %{map: map} do
+    inters = GameMap.intersections(map)
+    assert Enum.sort(inters) == [{6, 6}, {8, 8}, {8, 10}, {12, 8}]
   end
 end
