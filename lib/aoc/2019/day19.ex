@@ -14,22 +14,20 @@ defmodule AOC.Y2019.Day19 do
   end
 
   def p2 do
-    y1 = bin_search_bottom_left_y(0, 1000)
-    x0 = first_covered_at_row(y1)
-
-    {x0, y1 - @ship_size + 1}
+    {x0, y1} = search({0, @ship_size})
+    x0 * 10_000 + y1 - @ship_size + 1
   end
 
-  defp bin_search_bottom_left_y(min, max) when min > max, do: min - 1
+  defp search({x, y}) do
+    cond do
+      not in_beam?(x, y) ->
+        search({x + 1, y})
 
-  defp bin_search_bottom_left_y(min, max) do
-    y = div(min + max, 2)
-    x = first_covered_at_row(y)
+      valid?(x, y) ->
+        {x, y}
 
-    if valid?(x, y) do
-      bin_search_bottom_left_y(min, y - 1)
-    else
-      bin_search_bottom_left_y(y + 1, max)
+      true ->
+        search({x, y + 1})
     end
   end
 
@@ -39,11 +37,6 @@ defmodule AOC.Y2019.Day19 do
     in_beam?(x0, y0) && in_beam?(x1, y0) && in_beam?(x1, y1)
   end
 
-  defp in_beam?(x, y) do
-    [1] == Intcode.Computer.function_mode(@program, input: [x, y])
-  end
-
-  defp first_covered_at_row(y) do
-    (y * 2)..100_000 |> Enum.find(&in_beam?(&1, y))
-  end
+  defp in_beam?(x, y),
+    do: [1] == Intcode.Computer.function_mode(@program, input: [x, y])
 end
