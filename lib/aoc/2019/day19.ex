@@ -7,73 +7,43 @@ defmodule AOC.Y2019.Day19 do
   @ship_size 100
 
   def p1 do
-    for x <- 0..49, y <- 0..49, point_covered?(x, y) do
+    for x <- 0..49, y <- 0..49, in_beam?(x, y) do
       {x, y}
     end
     |> Enum.count()
   end
 
   def p2 do
-    bottom = bin_search_bottom_left_y(0, 1000)
-    left = first_covered_at_row(bottom)
+    y1 = bin_search_bottom_left_y(0, 1000)
+    x0 = first_covered_at_row(y1)
 
-    # Top right
-    [{0, -1}, {0, 0}, {1, 0}]
-    |> Enum.each(fn {x, y} ->
-        {x, y, point_covered?(left + @ship_size + x - 1, bottom - @ship_size + y + 1)},
-        label: :top_right
-      )
-    end)
-
-    # Bottom left
-    [{-1, 0}, {0, 0}, {0, 1}]
-    |> Enum.each(fn {x, y} ->
-        {x, y, point_covered?(left + x, bottom + y)},
-        label: :bottom_left
-      )
-    end)
-
-    {left, bottom - @ship_size + 1}
+    {x0, y1 - @ship_size + 1}
   end
 
   defp bin_search_bottom_left_y(min, max) when min > max, do: min - 1
 
   defp bin_search_bottom_left_y(min, max) do
-    half = div(min + max, 2)
+    y = div(min + max, 2)
+    x = first_covered_at_row(y)
 
-    bottom_left_x = first_covered_at_row(half)
-
-
-    case next_move(bottom_left_x + @ship_size - 1, half - @ship_size + 1) do
-      :found ->
-        half
-
-      :up ->
-        bin_search_bottom_left_y(min, half)
-
-      :down ->
-        bin_search_bottom_left_y(half, max)
+    if valid?(x, y) do
+      bin_search_bottom_left_y(min, y - 1)
+    else
+      bin_search_bottom_left_y(y + 1, max)
     end
   end
 
-  defp next_move(x, y) do
-    cond do
-      point_covered?(x, y - 1) ->
-        :up
-
-      !point_covered?(x, y) ->
-        :down
-
-      true ->
-        :found
-    end
+  defp valid?(x0, y1) do
+    x1 = x0 + @ship_size - 1
+    y0 = y1 - @ship_size + 1
+    in_beam?(x0, y0) && in_beam?(x1, y0) && in_beam?(x1, y1)
   end
 
-  defp point_covered?(x, y) do
+  defp in_beam?(x, y) do
     [1] == Intcode.Computer.function_mode(@program, input: [x, y])
   end
 
   defp first_covered_at_row(y) do
-    (y * 2)..100_000 |> Enum.find(&point_covered?(&1, y))
+    (y * 2)..100_000 |> Enum.find(&in_beam?(&1, y))
   end
 end
