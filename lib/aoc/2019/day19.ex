@@ -14,20 +14,21 @@ defmodule AOC.Y2019.Day19 do
   end
 
   def p2 do
-    {x0, y1} = search({0, @ship_size})
+    {x0, y1} = search(0, @ship_size)
     x0 * 10_000 + y1 - @ship_size + 1
   end
 
-  defp search({x, y}) do
+  defp search(x, y) do
     cond do
       not in_beam?(x, y) ->
-        search({x + 1, y})
+        search(x + 1, y)
 
       valid?(x, y) ->
         {x, y}
 
       true ->
-        search({x, y + 1})
+        # linear search works:
+        search(x, y + 1)
     end
   end
 
