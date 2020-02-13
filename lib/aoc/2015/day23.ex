@@ -16,19 +16,25 @@ defmodule AOC.Y2015.Day23 do
     |> run()
   end
 
-  def example do
-    source = """
-    inc a
-    jio a, +2
-    tpl a
-    inc a
-    """
-
-    run(source)
-  end
-
   @initial_state %{"a" => 0, "b" => 0}
   @initial_pos 0
+
+  defp compile(source) do
+    program =
+      source
+      |> String.trim_trailing()
+      |> String.split("\n")
+      |> Enum.map(&String.split(&1, [" ", ","], trim: true))
+      |> Enum.with_index()
+      |> Enum.map(fn {tokens, n} -> {n, tokens} end)
+      |> Enum.into(%{})
+
+    %{
+      registers: @initial_state,
+      pos: @initial_pos,
+      program: program
+    }
+  end
 
   def run(source) when is_binary(source),
     do: source |> compile() |> run()
@@ -44,74 +50,45 @@ defmodule AOC.Y2015.Day23 do
     end
   end
 
-  defp run_cmd(%{registers: reg} = computer, [op, r]) when op in [:hlf, :tpl, :inc] do
-    instructions = %{
-      hlf: &div(&1, 2),
-      tpl: &(&1 * 3),
-      inc: &(&1 + 1)
-    }
+  defp run_cmd(%{registers: reg} = computer, [op, r]) when op in ~w[hlf tpl inc] do
+    updater = fn val ->
+      case op do
+        "hlf" -> div(val, 2)
+        "tpl" -> val * 3
+        "inc" -> val + 1
+      end
+    end
 
-    %{computer | registers: Map.update!(reg, r, instructions[op])}
+    %{computer | registers: %{reg | r => updater.(reg[r])}}
     |> next_line()
   end
 
-  defp run_cmd(computer, [:jmp, offset]) do
-    jump(computer, offset)
-  end
+  defp run_cmd(computer, ["jmp", offset]),
+    do: move_cursor(computer, offset)
 
-  defp run_cmd(%{registers: reg} = computer, [:jie, r, offset]) do
+  defp run_cmd(%{registers: reg} = computer, ["jie", r, offset]) do
     if rem(Map.fetch!(reg, r), 2) == 0 do
-      jump(computer, offset)
+      move_cursor(computer, offset)
     else
       next_line(computer)
     end
   end
 
-  defp run_cmd(computer, [:jio, r, offset]) do
+  defp run_cmd(computer, ["jio", r, offset]) do
     case computer.registers do
       %{^r => 1} ->
-        jump(computer, offset)
+        move_cursor(computer, offset)
 
       _ ->
         next_line(computer)
     end
   end
 
-  defp next_line(computer) do
-    jump(computer, 1)
-  end
+  defp next_line(computer), do: move_cursor(computer, 1)
 
-  defp jump(%{pos: pos} = computer, offset) do
-    %{computer | pos: pos + offset}
-  end
+  defp move_cursor(computer, offset) when is_binary(offset),
+    do: move_cursor(computer, String.to_integer(offset))
 
-  defp compile(source) do
-    program =
-      source
-      |> String.trim_trailing()
-      |> String.split("\n")
-      |> Enum.map(&String.split(&1, [" ", ","], trim: true))
-      |> Enum.map(&parse_tokens/1)
-      |> Enum.with_index()
-      |> Enum.map(fn {tokens, n} -> {n, tokens} end)
-      |> Enum.into(%{})
-
-    %{
-      registers: @initial_state,
-      pos: @initial_pos,
-      program: program
-    }
-  end
-
-  defp parse_tokens([op | params]) do
-    [
-      String.to_atom(op)
-      | Enum.map(params, fn w ->
-          case Integer.parse(w) do
-            {i, ""} -> i
-            _ -> w
-          end
-        end)
-    ]
-  end
+  defp move_cursor(%{pos: pos} = computer, offset),
+    do: %{computer | pos: pos + offset}
 end
