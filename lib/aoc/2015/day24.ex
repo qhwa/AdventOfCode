@@ -3,40 +3,49 @@ defmodule AOC.Y2015.Day24 do
   @see https://adventofcode.com/2015/day/24
   """
   def p1 do
-    numbers = read_input()
-    sum = Enum.sum(numbers)
+    result(3)
+  end
 
-    groups(numbers, div(sum, 3))
+  def p2 do
+    result(4)
+  end
+
+  defp result(parts) do
+    numbers = read_input()
+    sum = Enum.sum(numbers) |> div(parts)
+
+    numbers
+    |> groups_by_sum(sum)
     |> Enum.sort_by(&{length(&1), qe(&1)})
     |> hd()
     |> qe()
   end
 
-  defp groups(_, n) when n < 0 do
+  defp groups_by_sum(_, n) when n < 0 do
     :invalid
   end
 
-  defp groups([], 0) do
+  defp groups_by_sum([], 0) do
     [[]]
   end
 
-  defp groups([], _) do
+  defp groups_by_sum([], _) do
     :invalid
   end
 
-  defp groups(_, 0) do
+  defp groups_by_sum(_, 0) do
     :invalid
   end
 
-  defp groups([h | tail], n) do
+  defp groups_by_sum([h | tail], n) do
     without_h =
-      case groups(tail, n) do
+      case groups_by_sum(tail, n) do
         :invalid -> []
         o -> o
       end
 
     with_h =
-      case groups(tail, n - h) do
+      case groups_by_sum(tail, n - h) do
         :invalid -> []
         o -> o
       end
