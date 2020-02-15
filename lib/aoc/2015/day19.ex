@@ -3,88 +3,140 @@ defmodule AOC.Y2015.Day19 do
   @see https://adventofcode.com/2015/day/19
   """
 
-  @reg ~r/[A-z][a-z]*/
   @input "CRnCaCaCaSiRnBPTiMgArSiRnSiRnMgArSiRnCaFArTiTiBSiThFYCaFArCaCaSiThCaPBSiThSiThCaCaPTiRnPBSiThRnFArArCaCaSiThCaSiThSiRnMgArCaPTiBPRnFArSiThCaSiRnFArBCaSiRnCaPRnFArPMgYCaFArCaPTiTiTiBPBSiThCaPTiBPBSiRnFArBPBSiRnCaFArBPRnSiRnFArRnSiRnBFArCaFArCaCaCaSiThSiThCaCaPBPTiTiRnFArCaPTiBSiAlArPBCaCaCaCaCaSiRnMgArCaSiThFArThCaSiThCaSiRnCaFYCaSiRnFYFArFArCaSiRnFYFArCaSiRnBPMgArSiThPRnFArCaSiRnFArTiRnSiRnFYFArCaSiRnBFArCaSiRnTiMgArSiThCaSiThCaFArPRnFArSiRnFArTiTiTiTiBCaCaSiRnCaCaFYFArSiThCaPTiBPTiBCaSiThSiRnMgArCaF"
 
-  @mapping "priv/data/2015/day19.txt"
-           |> File.stream!()
-           |> Stream.map(&String.trim_trailing/1)
+  @mapping "2015/day19.txt"
+           |> AOC.Input.stream()
            |> Stream.map(&String.split(&1, " => "))
-           |> Stream.map(&List.to_tuple/1)
+           |> Stream.map(fn [s, r] -> {r, s} end)
            |> Enum.into([])
 
-  def puzzle do
-    @input
-    |> group_count(@mapping)
+  def p2 do
+    deduce()
   end
 
-  def group_count(atoms, mapping) when is_binary(atoms) do
-    @reg
-    |> Regex.scan(atoms)
-    |> List.flatten()
-    |> group_count(mapping)
-  end
+  defp deduce(solutions \\ init_seqs(), gen \\ 0) do
+    solutions
+    |> Enum.map(&rate/1)
+    |> Enum.sort()
+    |> case do
+      [{1, actions} | _] ->
+        length(actions)
 
-  def group_count(atoms, mapping) do
-    atoms
-    |> all_groups(mapping)
-    |> Enum.uniq()
-    |> length()
-  end
+      [{score, best} | _] = rated ->
+        # IO.inspect(score, label: "genration: ##{gen}, best:")
 
-  def all_groups(atoms, mapping) do
-    for {atom, i} <- Enum.with_index(atoms), {k, v} <- mapping, atom == k do
-      {i, v}
+        new_ones = for _ <- 1..100, do: bear(rated) |> build_seq()
+
+        [build_seq(best) | new_ones]
+        |> deduce(gen + 1)
     end
-    |> Enum.map(fn {i, v} ->
-      atoms
-      |> List.replace_at(i, v)
-      |> Enum.join("")
+  end
+
+  defp init_seqs() do
+    for _ <- 1..100, do: build_seq()
+  end
+
+  defp build_seq(start \\ []) do
+    Stream.concat(start, Stream.repeatedly(fn -> Enum.random(@mapping) end))
+  end
+
+  defp rate(seq) do
+    Enum.reduce_while(seq, {[], @input}, fn {ret, origin}, {actions, input} ->
+      cond do
+        input == "e" ->
+          {:halt, {1, actions}}
+
+        String.contains?(input, ret) ->
+          next = String.replace(input, ret, origin, global: false)
+          {:cont, {[{ret, origin} | actions], next}}
+
+        :else ->
+          {:halt, {String.length(input), actions}}
+      end
     end)
-  end
+    |> case do
+      {i, actions} when is_integer(i) ->
+        {i, actions |> Enum.reverse()}
 
-  def puzzle2 do
-    step(@input, @mapping)
-  end
-
-  def step(input, mapping) do
-    mapping =
-      mapping
-      |> Enum.reduce(%{}, fn {k, v}, acc ->
-        Map.update(acc, v, [k], &[k | &1])
-      end)
-
-    {^input, min} = build_tree(input, mapping, 0)
-    min
-  end
-
-  def build_tree(input, mapping, depth) do
-    if input =~ ~r/^e+$/ do
-      {:done, depth}
-    else
-      build_tree_node(input, mapping, depth)
+      {actions, string} ->
+        {String.length(string), actions |> Enum.reverse()}
     end
   end
 
-  def build_tree_node(input, mapping, depth) do
-    groups =
-      for {dest, froms} <- mapping, String.contains?(input, dest), f <- froms do
-        input |> String.replace(dest, f, global: false)
+  defp bear(solutions) do
+    bear(get_one(solutions), get_one(solutions))
+  end
+
+  defp bear(p1, p2) do
+    p1 =
+      if :rand.uniform() < 0.5 do
+        cross(p1, p2)
+      else
+        p1
       end
 
-    {_, min_depth} =
-      groups
-      |> Enum.map(&build_tree(&1, mapping, depth + 1))
-      |> Enum.min_by(&walk/1, fn -> {:halt, 9_999_999} end)
-
-    {input, min_depth}
+    if :rand.uniform() < 0.1 do
+      mutate(p1)
+    else
+      p1
+    end
   end
 
-  def walk({:done, depth}) do
-    depth
+  defp cross(seq1, seq2) do
+    len = length(seq1)
+    p1 = :rand.uniform(len) - 1
+    p2 = trunc(:rand.uniform() * (len - p1 + 1)) + p1
+
+    Enum.slice(seq1, 0..(p1 - 1)) ++
+      Enum.slice(seq2, p1..p2) ++
+      Enum.slice(seq1, (p2 + 1)..(len - 1))
   end
 
-  def walk({_, min_depth}) do
-    min_depth
+  defp mutate(seqs) do
+    len = length(seqs)
+    p1 = :rand.uniform(len) - 1
+    p2 = :rand.uniform(len) - 1
+    [p1, p2] = Enum.sort([p1, p2])
+
+    if p1 == p2 do
+      seqs
+    else
+      case :rand.uniform(3) do
+        1 ->
+          seqs
+          |> List.replace_at(p1, Enum.at(seqs, p2))
+          |> List.replace_at(p2, Enum.at(seqs, p1))
+
+        2 ->
+          Enum.slice(seqs, 0..(p1 - 1)) ++
+            (Enum.slice(seqs, p1..p2) |> Enum.reverse()) ++ Enum.slice(seqs, p2..(len - 1))
+
+        3 ->
+          Enum.slice(seqs, 0..(p1 - 1)) ++
+            Enum.slice(seqs, p2..(len - 1)) ++ Enum.slice(seqs, p1..p2)
+      end
+    end
+  end
+
+  defp get_one(solutions) do
+    solutions =
+      solutions
+      |> Enum.map(fn {len, actions} -> {div(500, len), actions} end)
+
+    max =
+      solutions
+      |> Stream.map(&elem(&1, 0))
+      |> Enum.sum()
+      |> :rand.uniform()
+
+    solutions
+    |> Enum.reduce_while(max, fn {score, actions}, count ->
+      if count > score do
+        {:cont, count - score}
+      else
+        {:halt, actions}
+      end
+    end)
   end
 end
