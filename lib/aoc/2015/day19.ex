@@ -11,6 +11,28 @@ defmodule AOC.Y2015.Day19 do
            |> Stream.map(fn [s, r] -> {r, s} end)
            |> Enum.into([])
 
+  def p1 do
+    one_relacements(@input, @mapping)
+    |> Enum.uniq()
+    |> length()
+  end
+
+  defp one_relacements(input, map) do
+    tokens =
+      Regex.scan(~r/[A-Z][a-z]?/, input)
+      |> List.flatten()
+
+    tokens
+    |> Stream.with_index()
+    |> Stream.flat_map(fn {s, index} ->
+      map
+      |> Stream.filter(fn {_rep, org} -> org == s end)
+      |> Stream.map(fn {rep, _} -> List.replace_at(tokens, index, rep) end)
+      |> Enum.map(&Enum.join/1)
+    end)
+    |> Enum.to_list()
+  end
+
   def p2 do
     deduce()
   end
@@ -21,9 +43,10 @@ defmodule AOC.Y2015.Day19 do
     |> Enum.sort()
     |> case do
       [{1, actions} | _] ->
+        IO.puts("Succeeded after #{gen} generations")
         length(actions)
 
-      [{score, best} | _] = rated ->
+      [{_score, best} | _] = rated ->
         # IO.inspect(score, label: "genration: ##{gen}, best:")
 
         new_ones = for _ <- 1..100, do: bear(rated) |> build_seq()
