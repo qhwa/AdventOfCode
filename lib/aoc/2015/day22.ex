@@ -5,7 +5,7 @@ defmodule AOC.Y2015.Day22 do
 
   defmodule Game do
     @moduledoc false
-    defstruct hero: nil, boss: nil, effects: [], mana_used: 0
+    defstruct hero: nil, boss: nil, effects: [], mana_used: 0, mode: :normal
   end
 
   require Logger
@@ -15,12 +15,16 @@ defmodule AOC.Y2015.Day22 do
 
   @spells [:magic_missile, :drain, :shield, :poison, :recharge]
 
-  @max_generations 1000
-  @generation_size 100
+  @max_tries_after_win 100
+  @generation_size 1000
 
-  def p1 do
-    deduce(%Game{hero: @hero, boss: @boss})
-  end
+  # [:poison, :recharge, :shield, :poison, :recharge, :shield, :poison, :recharge, :shield, :poison, :magic_missile, :magic_missile]
+  def p1,
+    do: deduce(%Game{hero: @hero, boss: @boss})
+
+  # [:shield, :recharge, :poison, :shield, :recharge, :poison, :shield, :recharge, :poison, :shield, :magic_missile, :poison, :magic_missile]
+  def p2,
+    do: deduce(%Game{hero: @hero, boss: @boss, mode: :hard})
 
   def example_1 do
     hero = %{hp: 10, armor: 0, mana: 250}
@@ -34,60 +38,53 @@ defmodule AOC.Y2015.Day22 do
     deduce(%Game{hero: hero, boss: boss})
   end
 
-  defp deduce(game, current_best \\ nil, solutions \\ build_seqs(), gen \\ 0)
+  defp deduce(
+         game,
+         current_best \\ nil,
+         solutions \\ build_seqs(),
+         gen \\ 0,
+         tries \\ @max_tries_after_win
+       )
 
-  defp deduce(_game, best, _, @max_generations) do
-    best
-  end
+  defp deduce(_game, best, _, _, 0), do: best
 
-  defp deduce(game, _, solutions, gen) do
+  defp deduce(game, _, solutions, gen, tries) do
     solutions
     |> Enum.map(&rate(&1, game))
     |> Enum.uniq()
     |> Enum.sort_by(fn {score, _} -> score end, :desc)
     |> case do
       [{score, best} | _] = rated ->
-        IO.inspect({score, best}, label: gen)
+        # credo:disable-for-next-line
+        IO.inspect({score, best}, label: "gen ##{gen}")
         new_ones = for _ <- 1..@generation_size, do: bear(rated) |> build_seq()
 
-        deduce(game, best, [build_seq(best) | new_ones], gen + 1)
+        tries =
+          case score do
+            {_, _, {0, _}} -> tries - 1
+            _ -> tries
+          end
+
+        deduce(game, best, [build_seq(best) | new_ones], gen + 1, tries)
     end
   end
 
-  defp build_seqs() do
-    # [[:poison, :drain, :magic_missile]]
-    # [[:poison, :magic_missile]]
-    # [[:recharge, :shield, :drain, :poison, :magic_missile]]
-    [
-      build_seq([
-        :recharge,
-        :shield,
-        :poison,
-        :drain,
-        :shield
-      ])
-    ]
+  defp build_seqs(),
+    do: for(_ <- 1..@generation_size, do: build_seq())
 
-    for _ <- 1..@generation_size, do: build_seq()
-  end
+  defp build_seq(starting \\ []),
+    do: Stream.concat(starting, Stream.repeatedly(&random_spell/0))
 
-  defp build_seq(starting \\ []) do
-    Stream.concat(starting, Stream.repeatedly(&random_spell/0))
-  end
-
-  defp random_spell() do
-    Enum.random(@spells)
-  end
+  defp random_spell(),
+    do: Enum.random(@spells)
 
   defp rate(solution, game) do
     {game, _turn, spells} =
       solution
       |> Enum.reduce_while({game, 1, []}, fn spell, {game, turn, used_spells} ->
-        # IO.puts("**** current spell: #{spell}")
-
         case play_round(game, spell, turn) do
-          {:lose, game, reason} ->
-            # IO.inspect(reason, label: :lose)
+          {:lose, game, _reason} ->
+            game = %{game | hero: %{game.hero | hp: 0}}
             {:halt, {game, turn, [spell | used_spells]}}
 
           {:win, game} ->
@@ -102,40 +99,46 @@ defmodule AOC.Y2015.Day22 do
   end
 
   defp score(%{hero: hero, boss: boss, mana_used: mana}) do
-    point = (boss.max_hp - boss.hp) * 1000 - mana
-    {point, mana, {boss.hp, hero.hp}}
+    hero_hp = max(hero.hp, 0)
+    boss_hp = max(boss.hp, 0)
+
+    point = boss.max_hp - boss_hp
+    {point, -mana, {boss_hp, hero_hp}}
   end
 
   defp play_round(game, spell, turn) do
-    # IO.puts("===> user turn, #{turn}")
-
-    with {:ok, game} <- game |> apply_effects(),
-         # IO.inspect(game, label: "before turn #{turn}"),
+    with {:ok, game} <- game |> apply_system_effect(),
          {:ok, game} <- game |> check(),
-         # IO.puts("---> user casting #{spell}"),
-         {:ok, game} <- game |> cast_spell(spell),
-         {:ok, game} <- game |> check(),
-         # IO.inspect(game, label: "after turn #{turn}"),
-         # IO.puts("===> boss turn, #{turn + 1}"),
          {:ok, game} <- game |> apply_effects(),
          {:ok, game} <- game |> check(),
-         # IO.inspect(game, label: "before boss attack"),
+         {:ok, game} <- game |> cast_spell(spell),
+         {:ok, game} <- game |> check(),
+         {:ok, game} <- game |> apply_effects(),
+         {:ok, game} <- game |> check(),
          {:ok, game} <- game |> boss_attack(),
          {:ok, game} <- game |> check() do
       game
     end
   end
 
+  defp apply_system_effect(%{hero: hero, mode: :hard} = game) do
+    {:ok, %{game | hero: %{hero | hp: hero.hp - 1}}}
+  end
+
+  defp apply_system_effect(game) do
+    {:ok, game}
+  end
+
   defp check(%{hero: %{hp: hp}} = game) when hp < 0 do
-    {:lose, %{game | hero: %{game.hero | hp: 0}}, :defeated}
+    {:lose, game, :defeated}
   end
 
   defp check(%{hero: %{mana: mana}} = game) when mana < 0 do
-    {:lose, game, :out_of_mana}
+    {:lose, %{game | hero: %{game.hero | hp: 0}}, :out_of_mana}
   end
 
   defp check(%{boss: %{hp: hp}} = game) when hp <= 0 do
-    {:win, %{game | boss: %{game.boss | hp: 0}}}
+    {:win, game}
   end
 
   defp check(%{effects: effects} = game) do
@@ -257,7 +260,7 @@ defmodule AOC.Y2015.Day22 do
         p1
       end
 
-    if :rand.uniform() < 0.5 do
+    if :rand.uniform() < 0.05 do
       mutate(p1)
     else
       p1
@@ -281,9 +284,9 @@ defmodule AOC.Y2015.Day22 do
     [p1, p2] = Enum.sort([p1, p2])
 
     if p1 == p2 do
-      seqs
+      mutate(seqs)
     else
-      case :rand.uniform(3) do
+      case :rand.uniform(4) do
         1 ->
           seqs
           |> List.replace_at(p1, Enum.at(seqs, p2))
@@ -291,11 +294,14 @@ defmodule AOC.Y2015.Day22 do
 
         2 ->
           Enum.slice(seqs, 0..(p1 - 1)) ++
-            (Enum.slice(seqs, p1..p2) |> Enum.reverse()) ++ Enum.slice(seqs, p2..(len - 1))
+            (Enum.slice(seqs, p1..p2) |> Enum.reverse()) ++ Enum.slice(seqs, (p2 + 1)..(len - 1))
 
         3 ->
           Enum.slice(seqs, 0..(p1 - 1)) ++
-            Enum.slice(seqs, p2..(len - 1)) ++ Enum.slice(seqs, p1..p2)
+            Enum.slice(seqs, (p2 + 1)..(len - 1)) ++ Enum.slice(seqs, p1..p2)
+
+        4 ->
+          Enum.shuffle(seqs)
       end
     end
   end
