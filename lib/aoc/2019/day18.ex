@@ -10,7 +10,6 @@ defmodule AOC.Y2019.Day18 do
     "priv/data/2019/day18.txt"
     |> File.read!()
     |> parse()
-    |> IO.inspect()
     |> find_best_solution()
   end
 
@@ -48,6 +47,7 @@ defmodule AOC.Y2019.Day18 do
     |> Enum.sort()
     |> case do
       [{score, order} | _] = solutions ->
+        # credo:disable-for-next-line
         IO.inspect({score, order |> Enum.join()}, label: "gen ##{gen}")
 
         best5 =
