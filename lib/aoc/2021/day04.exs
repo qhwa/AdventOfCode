@@ -1,42 +1,40 @@
 defmodule Y2021.Day04 do
+  @moduledoc """
+  https://adventofcode.com/2021/day/4
+
+  Run with: `mix run lib/aoc/2021/day04.exs`
+  """
   def p1 do
-    [{[number | _], boards}] =
-      parse_input()
-      |> Stream.iterate(fn {[n | rest], boards} ->
-        {rest, mark(boards, n)}
+    {seqs, boards} = parse_input()
+
+    [{_, n, winner}] =
+      Stream.scan(seqs, {boards, nil, nil}, fn n, {boards, _, _} ->
+        boards = mark(boards, n)
+        winner = winner(boards)
+        {boards, n, winner}
       end)
-      |> Stream.take_while(fn
-        {[], _} -> false
-        {_, []} -> false
-        {_, boards} -> winner(boards) == nil
-      end)
-      |> Stream.take(-1)
+      |> Stream.drop_while(fn {_, _, winner} -> winner == nil end)
+      |> Stream.take(1)
       |> Enum.to_list()
 
-    boards
-    |> mark(number)
-    |> winner()
-    |> to_score(number)
+    to_score(winner, n)
   end
 
   def p2 do
-    [{[number | _], boards}] =
-      parse_input()
-      |> Stream.iterate(fn {[n | rest], boards} ->
-        {rest, mark(boards, n) |> Enum.reject(&won?/1)}
+    {seqs, boards} = parse_input()
+
+    [{_, n, winner}] =
+      Stream.scan(seqs, {boards, nil, nil}, fn n, {boards, _, _} ->
+        boards = mark(boards, n)
+        winner = winner(boards)
+        boards = Enum.reject(boards, &won?/1)
+        {boards, n, winner}
       end)
-      |> Stream.take_while(fn
-        {[], _} -> false
-        {_, []} -> false
-        {_, boards} -> winner(boards) == nil
-      end)
-      |> Stream.take(-1)
+      |> Stream.drop_while(fn {boards, _, _} -> boards != [] end)
+      |> Stream.take(1)
       |> Enum.to_list()
 
-    boards
-    |> mark(number)
-    |> winner()
-    |> to_score(number)
+    to_score(winner, n)
   end
 
   defp parse_input do
@@ -45,21 +43,17 @@ defmodule Y2021.Day04 do
     |> parse_input()
   end
 
-  defp parse_input([seqs, "" | boards]) do
-    {parse_seqs(seqs), parse_boards(boards)}
-  end
+  defp parse_input([seqs, "" | boards]),
+    do: {parse_seqs(seqs), parse_boards(boards)}
 
-  defp parse_seqs(line) do
-    line |> String.split(",") |> Enum.map(&String.to_integer/1)
-  end
+  defp parse_seqs(line),
+    do: line |> String.split(",") |> Enum.map(&String.to_integer/1)
 
-  defp parse_boards([]) do
-    []
-  end
+  defp parse_boards([]),
+    do: []
 
-  defp parse_boards(["" | rest]) do
-    parse_boards(rest)
-  end
+  defp parse_boards(["" | rest]),
+    do: parse_boards(rest)
 
   defp parse_boards(lines) do
     {board_lines, rest} = lines |> Enum.split_while(&(&1 != ""))
@@ -83,46 +77,33 @@ defmodule Y2021.Day04 do
   defp mark(boards, n) do
     boards
     |> Enum.map(
-      &Map.new(&1, fn
-        {pos, ^n} -> {pos, :taken}
-        other -> other
-      end)
+      &(Enum.reject(&1, fn
+          {_, ^n} -> true
+          _ -> false
+        end)
+        |> Enum.into(%{}))
     )
   end
 
-  defp winner(boards) do
-    boards |> Enum.find(&won?/1)
-  end
+  defp winner(boards),
+    do: boards |> Enum.find(&won?/1)
 
   defp won?(board) do
-    points = for x <- 0..4, y <- 0..4, do: {x, y}
-
-    Enum.any?(points, fn pos ->
-      col_taken?(board, pos) or row_taken?(board, pos)
-    end)
+    points = for x <- 0..4, do: {x, x}
+    Enum.any?(points, &(col_taken?(board, &1) or row_taken?(board, &1)))
   end
 
-  defp col_taken?(board, {x, _}) do
-    Enum.all?(0..4, fn y -> pos_taken?(board, {x, y}) end)
-  end
+  defp col_taken?(board, {x, _}),
+    do: Enum.all?(0..4, &pos_taken?(board, {x, &1}))
 
-  defp row_taken?(board, {_, y}) do
-    Enum.all?(0..4, fn x -> pos_taken?(board, {x, y}) end)
-  end
+  defp row_taken?(board, {_, y}),
+    do: Enum.all?(0..4, &pos_taken?(board, {&1, y}))
 
   defp pos_taken?(board, pos),
-    do: Map.get(board, pos) == :taken
+    do: not Map.has_key?(board, pos)
 
-  defp to_score(board, number) do
-    board
-    |> Stream.map(fn
-      {_pos, n} when is_integer(n) -> n
-      _ -> 0
-    end)
-    |> Enum.to_list()
-    |> Enum.sum()
-    |> Kernel.*(number)
-  end
+  defp to_score(board, number),
+    do: Map.values(board) |> Enum.sum() |> Kernel.*(number)
 end
 
 Y2021.Day04.p1() |> IO.inspect(label: "part 1")
