@@ -35,4 +35,18 @@ defmodule AOC.Input do
     |> stream()
     |> Stream.map(transform)
   end
+
+  def read_integers(file) do
+    path =
+      Path.join([
+        :code.priv_dir(:advent_of_code),
+        "data",
+        file
+      ])
+
+    File.read!(path)
+    |> String.trim_trailing()
+    |> String.split(",")
+    |> Enum.map(&String.to_integer/1)
+  end
 end
