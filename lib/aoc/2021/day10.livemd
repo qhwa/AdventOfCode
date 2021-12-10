@@ -16,11 +16,12 @@ input = Kino.Input.textarea("Please input:")
 
 ```elixir
 input =
-  Kino.Input.read(input)
+  input
+  |> Kino.Input.read()
   |> String.split("\n", trim: true)
 ```
 
-## Section
+## The little syntax checker
 
 ```elixir
 defmodule SyntaxChecker do
