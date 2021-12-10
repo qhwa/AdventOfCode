@@ -1,3 +1,5 @@
+<!-- vim: syntax=markdown -->
+
 # AoC Day10
 
 ## Setup
