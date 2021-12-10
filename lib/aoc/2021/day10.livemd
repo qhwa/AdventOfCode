@@ -31,24 +31,24 @@ defmodule SyntaxChecker do
     ?> => {?<, 4, 25137}
   }
 
-  def score(code, queue \\ [])
+  def score(code, stack \\ [])
 
-  def score(<<char, code::binary>>, queue) when char in [?<, ?{, ?[, ?(],
-    do: score(code, [char | queue])
+  def score(<<char, code::binary>>, stack) when char in [?<, ?{, ?[, ?(],
+    do: score(code, [char | stack])
 
-  def score(<<char, code::binary>>, [current_open | queue]) when char in [?>, ?}, ?], ?)] do
+  def score(<<char, code::binary>>, [current_open | stack]) when char in [?>, ?}, ?], ?)] do
     case @scores do
       %{^char => {^current_open, _, _}} ->
-        score(code, queue)
+        score(code, stack)
 
       %{^char => {_, _, corrupted_score}} ->
         {:corrupted, corrupted_score}
     end
   end
 
-  def score("", queue) do
+  def score("", stack) do
     completing_score =
-      Enum.reduce(queue, 0, fn char, score ->
+      Enum.reduce(stack, 0, fn char, score ->
         {_, {_, completing_score, _}} = Enum.find(@scores, &match?({_, {^char, _, _}}, &1))
         score * 5 + completing_score
       end)
