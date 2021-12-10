@@ -10,6 +10,8 @@ Mix.install([
 ])
 ```
 
+<!-- livebook:{"reevaluate_automatically":true} -->
+
 ```elixir
 input = Kino.Input.textarea("Please input:")
 ```
@@ -25,33 +27,46 @@ input =
 
 ```elixir
 defmodule SyntaxChecker do
-  @scores %{
-    ?) => {?(, 1, 3},
-    ?] => {?[, 2, 57},
-    ?} => {?{, 3, 1197},
-    ?> => {?<, 4, 25137}
+  @pairs %{
+    ?( => ?),
+    ?[ => ?],
+    ?{ => ?},
+    ?< => ?>
+  }
+
+  @corrupt_scores %{
+    ?) => 3,
+    ?] => 57,
+    ?} => 1197,
+    ?> => 25137
+  }
+
+  @completion_scores %{
+    ?) => 1,
+    ?] => 2,
+    ?} => 3,
+    ?> => 4
   }
 
   def score(code, stack \\ [])
 
-  def score(<<char, code::binary>>, stack) when char in [?<, ?{, ?[, ?(],
-    do: score(code, [char | stack])
+  def score(<<open_char, code::binary>>, stack) when is_map_key(@pairs, open_char) do
+    %{^open_char => close_char} = @pairs
+    score(code, [close_char | stack])
+  end
 
-  def score(<<char, code::binary>>, [current_open | stack]) when char in [?>, ?}, ?], ?)] do
-    case @scores do
-      %{^char => {^current_open, _, _}} ->
-        score(code, stack)
+  def score(<<close_char, code::binary>>, [close_char | stack]),
+    do: score(code, stack)
 
-      %{^char => {_, _, corrupted_score}} ->
-        {:corrupted, corrupted_score}
-    end
+  def score(<<close_char, _::binary>>, _) do
+    %{^close_char => score} = @corrupt_scores
+    {:corrupted, score}
   end
 
   def score("", stack) do
     completing_score =
-      Enum.reduce(stack, 0, fn char, score ->
-        {_, {_, completing_score, _}} = Enum.find(@scores, &match?({_, {^char, _, _}}, &1))
-        score * 5 + completing_score
+      Enum.reduce(stack, 0, fn close_char, score ->
+        score * 5 + @completion_scores[close_char]
       end)
 
     {:incomplete, completing_score}
