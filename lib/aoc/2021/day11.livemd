@@ -51,8 +51,15 @@ defmodule Grid do
     def inspect(%Grid{map: map}, _) do
       Enum.map(0..9, fn row ->
         Enum.map(0..9, fn col ->
-          map[{col, row}]
-          |> to_string()
+          pos = {col, row}
+
+          case map do
+            %{^pos => 0} ->
+              IO.ANSI.format([:red, "0", :reset])
+
+            %{^pos => value} ->
+              IO.ANSI.format([:green, to_string(value), :reset])
+          end
         end)
         |> Enum.intersperse(" ")
       end)
@@ -140,4 +147,14 @@ grid
   Enum.any?(map, fn {_pos, value} -> value != 0 end)
 end)
 |> Enum.count()
+```
+
+## Just For Fun
+
+```elixir
+grid
+|> Stream.iterate(&Recursion.recur/1)
+|> Stream.drop(190)
+|> Stream.take(1)
+|> Enum.at(0)
 ```
