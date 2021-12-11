@@ -1,0 +1,143 @@
+<!-- vim: syntax=markdown -->
+
+# AoC Day10
+
+## References
+
+https://adventofcode.com/2021/day/11
+
+## Setup
+
+```elixir
+Mix.install(
+  [
+    {:kino, "~> 0.4"}
+  ],
+  consolidate_protocols: false
+)
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste your input:")
+```
+
+```elixir
+lines = Kino.Input.read(input)
+```
+
+```elixir
+defmodule Grid do
+  defstruct map: %{}
+
+  def parse(lines) do
+    map =
+      lines
+      |> String.split("\n", trim: true)
+      |> Stream.with_index()
+      |> Stream.flat_map(fn {line, row} ->
+        line
+        |> String.graphemes()
+        |> Stream.with_index()
+        |> Enum.map(fn {n, col} ->
+          {{col, row}, String.to_integer(n)}
+        end)
+      end)
+      |> Enum.into(%{})
+
+    %Grid{map: map}
+  end
+
+  defimpl Inspect do
+    def inspect(%Grid{map: map}, _) do
+      Enum.map(0..9, fn row ->
+        Enum.map(0..9, fn col ->
+          map[{col, row}]
+          |> to_string()
+        end)
+        |> Enum.intersperse(" ")
+      end)
+      |> Enum.join("\n")
+    end
+  end
+end
+```
+
+```elixir
+grid = Grid.parse(lines)
+```
+
+<!-- livebook:{"reevaluate_automatically":true} -->
+
+```elixir
+defmodule Recursion do
+  def recur(%{map: map} = grid) do
+    map =
+      map
+      |> Enum.reduce(map, fn {pos, _value}, map ->
+        increase(map, pos)
+      end)
+      |> go_out()
+
+    %{grid | map: map}
+  end
+
+  defp increase(map, pos) do
+    case map do
+      %{^pos => 9} ->
+        flash(map, pos)
+
+      %{^pos => n} ->
+        Map.put(map, pos, n + 1)
+
+      %{} ->
+        map
+    end
+  end
+
+  defp flash(map, {col, row} = pos) do
+    map
+    |> Map.update!(pos, &(&1 + 1))
+    |> increase({col + 1, row - 1})
+    |> increase({col + 1, row})
+    |> increase({col + 1, row + 1})
+    |> increase({col - 1, row - 1})
+    |> increase({col - 1, row})
+    |> increase({col - 1, row + 1})
+    |> increase({col, row + 1})
+    |> increase({col, row - 1})
+  end
+
+  defp go_out(map) do
+    Map.new(map, fn
+      {pos, value} when value > 9 ->
+        {pos, 0}
+
+      other ->
+        other
+    end)
+  end
+end
+```
+
+## Part 1
+
+```elixir
+grid
+|> Stream.iterate(&Recursion.recur/1)
+|> Stream.take(101)
+|> Stream.map(fn %{map: map} ->
+  Enum.count(map, fn {_pos, value} -> value == 0 end)
+end)
+|> Enum.sum()
+```
+
+## Part 2
+
+```elixir
+grid
+|> Stream.iterate(&Recursion.recur/1)
+|> Stream.take_while(fn %{map: map} ->
+  Enum.any?(map, fn {_pos, value} -> value != 0 end)
+end)
+|> Enum.count()
+```
