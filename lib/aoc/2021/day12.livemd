@@ -1,0 +1,103 @@
+<!-- vim: syntax=markdown -->
+
+# AoC Day12
+
+## References
+
+https://adventofcode.com/2021/day/12
+
+## Setup
+
+```elixir
+Mix.install(
+  [
+    {:kino, "~> 0.4"}
+  ],
+  consolidate_protocols: false
+)
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste your input:")
+```
+
+```elixir
+map =
+  Kino.Input.read(input)
+  |> String.split("\n", trim: true)
+  |> Stream.map(&String.split(&1, "-"))
+  |> Enum.reduce(%{}, fn [p1, p2], map ->
+    map
+    |> Map.update(p1, [p2], &[p2 | &1])
+    |> Map.update(p2, [p1], &[p1 | &1])
+  end)
+```
+
+## The Pathfinder
+
+```elixir
+defmodule PathFinder do
+  # I don't know how to make this work:
+  # defguard is_big(<<char, _::binary>>) when char in ?A..?Z
+
+  def find_all_paths(map, allow_visit_twice \\ false) do
+    [{["start"], %{allow_visit_twice: allow_visit_twice}}]
+    |> recur(map)
+  end
+
+  defp recur(paths, map) do
+    paths
+    |> Enum.flat_map(fn
+      {["end" | _], _} = result ->
+        [result]
+
+      {[p | walked], seen} ->
+        {visit_count, seen} =
+          Map.get_and_update(seen, p, fn
+            nil -> {1, 1}
+            n when is_integer(n) -> {n + 1, n + 1}
+          end)
+
+        seen = maybe_lock_twice_visit(seen, p, visit_count)
+
+        new_paths =
+          for np <- Map.fetch!(map, p),
+              can_visit?(np, seen) do
+            {
+              [np, p | walked],
+              seen
+            }
+          end
+
+        recur(new_paths, map)
+    end)
+  end
+
+  defp can_visit?(<<char, _::binary>>, _) when char in ?A..?Z, do: true
+  defp can_visit?(p, seen), do: Map.get(seen, p, 0) < limit_of(p, seen)
+
+  defp limit_of("start", _), do: 1
+  defp limit_of(<<char, _::binary>>, _) when char in ?A..?Z, do: :infinity
+  defp limit_of(_, %{allow_visit_twice: true}), do: 2
+  defp limit_of(_, _), do: 1
+
+  defp maybe_lock_twice_visit(%{allow_visit_twice: false} = seen, _, _n), do: seen
+  defp maybe_lock_twice_visit(seen, <<char, _::binary>>, _n) when char in ?A..?Z, do: seen
+  defp maybe_lock_twice_visit(seen, _, 1), do: seen
+  defp maybe_lock_twice_visit(seen, _, _), do: %{seen | allow_visit_twice: false}
+end
+```
+
+## Part 1
+
+```elixir
+PathFinder.find_all_paths(map)
+|> Enum.count()
+```
+
+## Part 2
+
+```elixir
+PathFinder.find_all_paths(map, true)
+|> Enum.count()
+```
