@@ -73,8 +73,8 @@ defmodule PathFinder do
     end)
   end
 
-  defp can_visit?(<<char, _::binary>>, _) when char in ?A..?Z, do: true
-  defp can_visit?(p, seen), do: Map.get(seen, p, 0) < limit_of(p, seen)
+  defp can_visit?(p, seen),
+    do: Map.get(seen, p, 0) < limit_of(p, seen)
 
   defp limit_of("start", _), do: 1
   defp limit_of(<<char, _::binary>>, _) when char in ?A..?Z, do: :infinity
