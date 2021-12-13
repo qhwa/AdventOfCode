@@ -1,0 +1,101 @@
+# Day 13
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste input:")
+```
+
+```elixir
+{map, commands} =
+  Kino.Input.read(input)
+  |> String.split("\n", trim: true)
+  |> Enum.reduce({%{}, []}, fn line, {map, commands} ->
+    case String.split(line, ",") do
+      [x, y] ->
+        {Map.put(map, {String.to_integer(x), String.to_integer(y)}, 1), commands}
+
+      ["fold along " <> c] ->
+        [axis, at] = String.split(c, "=")
+        command = {axis, String.to_integer(at)}
+        {map, commands ++ [command]}
+    end
+  end)
+```
+
+## Part 1
+
+```elixir
+map =
+  commands
+  |> Enum.take(1)
+  |> Enum.reduce(map, fn
+    {"x", at}, map ->
+      Map.new(map, fn
+        {{x, y}, 1} when x < at ->
+          {{x, y}, 1}
+
+        {{x, y}, 1} when x > at ->
+          {{at * 2 - x, y}, 1}
+      end)
+
+    {"y", at}, map ->
+      Map.new(map, fn
+        {{x, y}, 1} when y < at ->
+          {{x, y}, 1}
+
+        {{x, y}, 1} when y > at ->
+          {{x, at * 2 - y}, 1}
+      end)
+  end)
+
+Enum.count(map, fn {_, v} -> v == 1 end)
+```
+
+## Part 2
+
+```elixir
+map =
+  commands
+  |> Enum.reduce(map, fn
+    {"x", at}, map ->
+      Map.new(map, fn
+        {{x, y}, 1} when x < at ->
+          {{x, y}, 1}
+
+        {{x, y}, 1} when x > at ->
+          {{at * 2 - x, y}, 1}
+      end)
+
+    {"y", at}, map ->
+      Map.new(map, fn
+        {{x, y}, 1} when y < at ->
+          {{x, y}, 1}
+
+        {{x, y}, 1} when y > at ->
+          {{x, at * 2 - y}, 1}
+      end)
+  end)
+
+Enum.each(0..6, fn y ->
+  Enum.map(0..40, fn x ->
+    pos = {x, y}
+
+    case map do
+      %{^pos => 1} ->
+        IO.write("#")
+
+      _ ->
+        IO.write(".")
+    end
+  end)
+
+  IO.write("\n")
+end)
+```
