@@ -1,0 +1,231 @@
+<!-- vim: syntax=markdown -->
+
+# Day 16
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste input:")
+```
+
+```elixir
+defmodule BITS do
+  def decode(encoded) do
+    encoded
+    |> String.graphemes()
+    |> Enum.reduce(<<>>, fn char, acc ->
+      v = String.to_integer(char, 16)
+      <<acc::bits, v::integer-4>>
+    end)
+    |> decode_operator()
+  end
+
+  def decode_operator(<<v::3, 4::3, bits::bits>>) do
+    {value, left} = parse_literal(bits)
+    {%{version: v, type: 4, value: value}, left}
+  end
+
+  def decode_operator(
+        <<v::3, type::3, 0::1, sublen::15, subpacks::bits-size(sublen), left::bits>>
+      ) do
+    {subpacks, sub_left} = parse_subpacks(subpacks)
+    {%{version: v, type: type, subpacks: subpacks}, <<sub_left::bits, left::bits>>}
+  end
+
+  def decode_operator(<<v::3, type::3, 1::1, sub_count::11, subpacks::bits>>) do
+    {subpacks, left} = parse_subpacks(sub_count, subpacks)
+    {%{version: v, type: type, subpacks: subpacks}, left}
+  end
+
+  def decode_operator(bits) do
+    bits |> inspect_bits() |> IO.inspect(label: :unsupported)
+    {nil, bits}
+  end
+
+  defp parse_literal(bits) do
+    parse_literal(bits, 0)
+  end
+
+  defp parse_literal(<<1::1, x::4, bits::bits>>, acc) do
+    parse_literal(bits, x + acc * 16)
+  end
+
+  defp parse_literal(<<0::1, x::4, left::bits>>, acc) do
+    {x + acc * 16, left}
+  end
+
+  defp parse_subpacks(subpacks) do
+    {parsed, left} =
+      Stream.cycle([nil])
+      |> Enum.reduce_while({[], subpacks}, fn
+        _, {acc, ""} ->
+          {:halt, {acc, ""}}
+
+        _, {acc, input} ->
+          {value, left} = decode_operator(input)
+          {:cont, {[value | acc], left}}
+      end)
+
+    {Enum.reverse(parsed), left}
+  end
+
+  defp parse_subpacks(sub_count, subpacks) do
+    {parsed, left} =
+      1..sub_count
+      |> Enum.reduce_while({[], subpacks}, fn
+        _, {acc, ""} ->
+          {:halt, {acc, ""}}
+
+        _, {acc, input} ->
+          {value, left} = decode_operator(input)
+          {:cont, {[value | acc], left}}
+      end)
+
+    {Enum.reverse(parsed), left}
+  end
+
+  defp inspect_bits(""), do: ""
+
+  defp inspect_bits(<<b::1, bits::bits>>),
+    do: <<to_string(b)::binary, inspect_bits(bits)::binary>>
+
+  def version_sum(list) when is_list(list), do: Enum.map(list, &version_sum/1) |> Enum.sum()
+  def version_sum(%{version: v, subpacks: subpacks}), do: v + version_sum(subpacks)
+  def version_sum(%{version: v}), do: v
+  def version_sum(_), do: 0
+end
+```
+
+## Part 1
+
+```elixir
+{item, _} =
+  input
+  |> Kino.Input.read()
+  |> String.trim_trailing()
+  |> BITS.decode()
+
+BITS.version_sum(item)
+```
+
+## Part 2
+
+```elixir
+defmodule BITS2 do
+  def decode(encoded) do
+    encoded
+    |> String.graphemes()
+    |> Enum.reduce(<<>>, fn char, acc ->
+      v = String.to_integer(char, 16)
+      <<acc::bits, v::integer-4>>
+    end)
+    |> decode_operator()
+  end
+
+  def decode_operator(<<v::3, 4::3, bits::bits>>) do
+    {value, left} = parse_literal(bits)
+    {%{version: v, type: 4, value: value}, left}
+  end
+
+  def decode_operator(
+        <<v::3, type::3, 0::1, sublen::15, subpacks::bits-size(sublen), left::bits>>
+      ) do
+    {subpacks, sub_left} = parse_subpacks(subpacks)
+
+    {
+      %{version: v, type: type, subpacks: subpacks, value: value(type, subpacks)},
+      <<sub_left::bits, left::bits>>
+    }
+  end
+
+  def decode_operator(<<v::3, type::3, 1::1, sub_count::11, subpacks::bits>>) do
+    {subpacks, left} = parse_subpacks(sub_count, subpacks)
+
+    {
+      %{version: v, type: type, subpacks: subpacks, value: value(type, subpacks)},
+      left
+    }
+  end
+
+  def decode_operator(bits) do
+    bits |> inspect_bits() |> IO.inspect(label: :unsupported)
+    {nil, bits}
+  end
+
+  defp parse_literal(bits) do
+    parse_literal(bits, 0)
+  end
+
+  defp parse_literal(<<1::1, x::4, bits::bits>>, acc) do
+    parse_literal(bits, x + acc * 16)
+  end
+
+  defp parse_literal(<<0::1, x::4, left::bits>>, acc) do
+    {x + acc * 16, left}
+  end
+
+  defp parse_subpacks(subpacks) do
+    {parsed, left} =
+      Stream.cycle([nil])
+      |> Enum.reduce_while({[], subpacks}, fn
+        _, {acc, ""} ->
+          {:halt, {acc, ""}}
+
+        _, {acc, input} ->
+          {value, left} = decode_operator(input)
+          {:cont, {[value | acc], left}}
+      end)
+
+    {Enum.reverse(parsed), left}
+  end
+
+  defp parse_subpacks(sub_count, subpacks) do
+    {parsed, left} =
+      1..sub_count
+      |> Enum.reduce_while({[], subpacks}, fn
+        _, {acc, ""} ->
+          {:halt, {acc, ""}}
+
+        _, {acc, input} ->
+          {value, left} = decode_operator(input)
+          {:cont, {[value | acc], left}}
+      end)
+
+    {Enum.reverse(parsed), left}
+  end
+
+  defp inspect_bits(""), do: ""
+
+  defp inspect_bits(<<b::1, bits::bits>>),
+    do: <<to_string(b)::binary, inspect_bits(bits)::binary>>
+
+  def version_sum(list) when is_list(list), do: Enum.map(list, &version_sum/1) |> Enum.sum()
+  def version_sum(%{version: v, subpacks: subpacks}), do: v + version_sum(subpacks)
+  def version_sum(%{version: v}), do: v
+  def version_sum(_), do: 0
+
+  defp value(0, subpacks), do: subpacks |> Stream.map(& &1.value) |> Enum.sum()
+  defp value(1, subpacks), do: subpacks |> Stream.map(& &1.value) |> Enum.product()
+  defp value(2, subpacks), do: subpacks |> Stream.map(& &1.value) |> Enum.min()
+  defp value(3, subpacks), do: subpacks |> Stream.map(& &1.value) |> Enum.max()
+  defp value(5, [%{value: a}, %{value: b} | _]), do: if(a > b, do: 1, else: 0)
+  defp value(6, [%{value: a}, %{value: b} | _]), do: if(a < b, do: 1, else: 0)
+  defp value(7, [%{value: a}, %{value: b} | _]), do: if(a == b, do: 1, else: 0)
+end
+```
+
+```elixir
+{%{value: value}, _} =
+  input
+  |> Kino.Input.read()
+  |> String.trim_trailing()
+  |> BITS2.decode()
+
+value
+```
