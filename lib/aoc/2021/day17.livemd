@@ -1,0 +1,56 @@
+<!-- vim: syntax=markdown -->
+
+# Day 17
+
+## Part 1
+
+```elixir
+target_y_range = -85..-56
+max_vy = -1 - target_y_range.first
+div(max_vy * (max_vy + 1), 2)
+```
+
+## Part 2
+
+```elixir
+defmodule Test do
+  def simulate({vx, vy}, {x, y}, good?, bad?) do
+    cond do
+      good?.({x, y}) ->
+        :good
+
+      bad?.({x, y}) ->
+        :bad
+
+      true ->
+        new_pos = {x + vx, y + vy}
+        new_vx = if vx > 1, do: vx - 1, else: 0
+        new_v = {new_vx, vy - 1}
+        simulate(new_v, new_pos, good?, bad?)
+    end
+  end
+end
+
+target_x_range = 248..285
+target_y_range = -85..-56
+
+good? = fn {x, y} ->
+  x in target_x_range and y in target_y_range
+end
+
+bad? = fn {x, y} ->
+  x > target_x_range.last or y < target_y_range.first
+end
+
+min_vx0 = ceil(:math.sqrt(0.25 + 2 * target_x_range.first) - 0.5)
+max_vx0 = target_x_range.last
+min_vy0 = target_y_range.first
+max_vy0 = -1 - target_y_range.first
+
+for vx0 <- min_vx0..max_vx0,
+    vy0 <- min_vy0..max_vy0,
+    Test.simulate({vx0, vy0}, {0, 0}, good?, bad?) == :good do
+  {vx0, vy0}
+end
+|> Enum.count()
+```
