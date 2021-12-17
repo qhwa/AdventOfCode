@@ -15,18 +15,25 @@ input = Kino.Input.textarea("Please paste input:")
 ```
 
 ```elixir
-{map, commands} =
+{dots, commands} =
   Kino.Input.read(input)
   |> String.split("\n", trim: true)
-  |> Enum.reduce({%{}, []}, fn line, {map, commands} ->
+  |> Enum.reduce({MapSet.new(), []}, fn line, {dots, commands} ->
     case String.split(line, ",") do
       [x, y] ->
-        {Map.put(map, {String.to_integer(x), String.to_integer(y)}, 1), commands}
+        {
+          MapSet.put(dots, {String.to_integer(x), String.to_integer(y)}),
+          commands
+        }
 
       ["fold along " <> c] ->
         [axis, at] = String.split(c, "=")
         command = {axis, String.to_integer(at)}
-        {map, commands ++ [command]}
+
+        {
+          dots,
+          commands ++ [command]
+        }
     end
   end)
 ```
@@ -34,56 +41,38 @@ input = Kino.Input.textarea("Please paste input:")
 ## Part 1
 
 ```elixir
-map =
+dots =
   commands
   |> Enum.take(1)
-  |> Enum.reduce(map, fn
-    {"x", at}, map ->
-      Map.new(map, fn
-        {{x, y}, 1} ->
-          {{at - abs(at - x), y}, 1}
-      end)
+  |> Enum.reduce(dots, fn
+    {"x", at}, dots ->
+      for {x, y} <- dots, into: MapSet.new(), do: {at - abs(at - x), y}
 
-    {"y", at}, map ->
-      Map.new(map, fn
-        {{x, y}, 1} ->
-          {{x, at - abs(at - y)}, 1}
-      end)
+    {"y", at}, dots ->
+      for {x, y} <- dots, into: MapSet.new(), do: {x, at - abs(at - y)}
   end)
 
-Enum.count(map, fn {_, v} -> v == 1 end)
+Enum.count(dots)
 ```
 
 ## Part 2
 
 ```elixir
-map =
+dots =
   commands
-  |> Enum.reduce(map, fn
-    {"x", at}, map ->
-      Map.new(map, fn {{x, y}, 1} ->
-        {{at - abs(at - x), y}, 1}
-      end)
+  |> Enum.reduce(dots, fn
+    {"x", at}, dots ->
+      for {x, y} <- dots, into: MapSet.new(), do: {at - abs(at - x), y}
 
-    {"y", at}, map ->
-      Map.new(map, fn {{x, y}, 1} ->
-        {{x, at - abs(at - y)}, 1}
-      end)
+    {"y", at}, dots ->
+      for {x, y} <- dots, into: MapSet.new(), do: {x, at - abs(at - y)}
   end)
 
-Enum.each(0..6, fn y ->
+Enum.map(0..6, fn y ->
   Enum.map(0..40, fn x ->
-    pos = {x, y}
-
-    case map do
-      %{^pos => 1} ->
-        IO.write("##")
-
-      _ ->
-        IO.write("  ")
-    end
+    if {x, y} in dots, do: "##", else: "  "
   end)
-
-  IO.write("\n")
 end)
+|> Enum.intersperse("\n")
+|> IO.puts()
 ```
