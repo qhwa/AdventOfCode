@@ -11,9 +11,9 @@ Second, highest Y equals `vy0 + (vy0 - 1) + (vy0 - 2) + ... + 1` hence `div(vy0 
 * At step 0, the probe is at `{0, 0}`;
 * At step `vy0`, the proble is at the highest Y;
 * At step `vy0 * 2`, the probe is back at Y = 0;
-* At step `vy0 * 2 + 1`, the proble is at `-vy0 - 1`, the lowest it can go is the bottom of the target area, which is `85`. Otherwise, it will pass the area.
+* At step `vy0 * 2 + 1`, the proble is at `-vy0 - 1`, the lowest it can go is the bottom of the target area, which is `-85`. Otherwise, it will pass the area.
 
-So, `-vy0 - 1 >= 85`, then `vy0 <= 84`, then `h <= (84 * (84 + 1)) / 2`
+So, `-vy0 - 1 >= -85`, then `vy0 <= 84`, then `h <= (84 * (84 + 1)) / 2`
 
 ```elixir
 target_y_range = -85..-56
