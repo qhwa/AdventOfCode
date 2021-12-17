@@ -4,6 +4,17 @@
 
 ## Part 1
 
+First of all, since eventually vx will be 0, which means pos_x will stay unchange forever, we can eventually find a `vx0` make the probe's X stop in the range. So the highest Y is related to the highest `vy0` only.
+
+Second, highest Y equals `vy0 + (vy0 - 1) + (vy0 - 2) + ... + 1` hence `div(vy0 * (vy0 + 1), 2)`.
+
+* At step 0, the probe is at `{0, 0}`;
+* At step `vy0`, the proble is at the highest Y;
+* At step `vy0 * 2`, the probe is back at Y = 0;
+* At step `vy0 * 2 + 1`, the proble is at `-vy0 - 1`, the lowest it can go is the bottom of the target area, which is `85`. Otherwise, it will pass the area.
+
+So, `-vy0 - 1 >= 85`, then `vy0 <= 84`, then `h <= (84 * (84 + 1)) / 2`
+
 ```elixir
 target_y_range = -85..-56
 max_vy = -1 - target_y_range.first
@@ -14,6 +25,9 @@ div(max_vy * (max_vy + 1), 2)
 
 ```elixir
 defmodule Test do
+  # This can be improved by ignoring the first steps
+  # where X < min_X, or Y > max_y
+  # but it is not bad now, so I'll leave it
   def simulate({vx, vy}, {x, y}, good?, bad?) do
     cond do
       good?.({x, y}) ->
