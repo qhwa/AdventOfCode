@@ -1,0 +1,95 @@
+<!-- vim: syntax=markdown -->
+
+# Year 2021 Day 14
+
+## Section
+
+https://adventofcode.com/2021/day/14
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste input:")
+```
+
+```elixir
+[polymer | formulas] =
+  Kino.Input.read(input)
+  |> String.split("\n", trim: true)
+
+polymer = String.to_charlist(polymer)
+
+formulas =
+  formulas
+  |> Map.new(fn line ->
+    [<<a, b>>, <<c>>] = String.split(line, " -> ")
+    {{a, b}, c}
+  end)
+
+freq =
+  polymer
+  |> Enum.chunk_every(2, 1, :discard)
+  |> Enum.map(&List.to_tuple/1)
+  |> Enum.frequencies()
+  |> Map.merge(Enum.frequencies(polymer))
+```
+
+```elixir
+defmodule Recursion do
+  def run(freq, _, 0) do
+    freq
+  end
+
+  def run(freq, formulas, count) do
+    freq =
+      Enum.reduce(freq, freq, fn
+        {{p1, p2} = pair, count}, acc ->
+          case formulas do
+            %{^pair => insertion} ->
+              acc
+              |> Map.update(pair, -count, &(&1 - count))
+              |> Map.update({p1, insertion}, count, &(&1 + count))
+              |> Map.update({insertion, p2}, count, &(&1 + count))
+              |> Map.update(insertion, count, &(&1 + count))
+          end
+
+        {n, _}, acc when is_integer(n) ->
+          acc
+      end)
+
+    run(freq, formulas, count - 1)
+  end
+end
+```
+
+## Part 1
+
+```elixir
+{min, max} =
+  freq
+  |> Recursion.run(formulas, 10)
+  |> Stream.filter(fn {p, _} -> is_number(p) end)
+  |> Stream.map(fn {_, v} -> v end)
+  |> Enum.min_max()
+
+max - min
+```
+
+## Part 2
+
+```elixir
+{min, max} =
+  freq
+  |> Recursion.run(formulas, 40)
+  |> Stream.filter(fn {p, _} -> is_number(p) end)
+  |> Stream.map(fn {_, v} -> v end)
+  |> Enum.min_max()
+
+max - min
+```
