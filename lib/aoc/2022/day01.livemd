@@ -15,6 +15,7 @@ input = Kino.Input.textarea("Paste your input here:")
 ```elixir
 input
 |> Kino.Input.read()
+|> String.trim()
 |> String.split("\n\n")
 |> Stream.map(fn line ->
   line
@@ -30,6 +31,7 @@ end)
 ```elixir
 input
 |> Kino.Input.read()
+|> String.trim()
 |> String.split("\n\n")
 |> Stream.map(fn line ->
   line
