@@ -1,0 +1,74 @@
+<!-- vim: syntax=markdown -->
+
+# Day 15
+
+## Setup
+
+```elixir
+Mix.install([
+  {:kino, "~> 0.4"}
+])
+```
+
+```elixir
+input = Kino.Input.textarea("Please paste input:")
+```
+
+```elixir
+risks =
+  input
+  |> Kino.Input.read()
+  |> String.split("\n", trim: true)
+  |> Stream.with_index()
+  |> Stream.flat_map(fn {line, y} ->
+    String.graphemes(line)
+    |> Stream.with_index()
+    |> Enum.map(fn {char, x} ->
+      {{x, y}, String.to_integer(char)}
+    end)
+  end)
+  |> Enum.into(%{})
+
+{target, _} = Enum.max_by(risks, fn {pos, _} -> pos end)
+
+risks = Map.put(risks, :target, target)
+risks.target
+```
+
+```elixir
+defmodule LowestRiskPath do
+  def find_safest_path(risks) do
+    find_safest_path({0, 0}, risks, MapSet.new(), 0)
+  end
+
+  defp find_safest_path(target, %{target: target} = risks, _seen, risk_level) do
+    risk_level + risks[target]
+  end
+
+  defp find_safest_path({x, y}, risks, seen, risk_level) do
+    seen = MapSet.put(seen, {x, y})
+    risk = if {x, y} == {0, 0}, do: 0, else: Map.fetch!(risks, {x, y})
+
+    [{x + 1, y}, {x, y + 1}]
+    |> Stream.filter(fn p -> is_map_key(risks, p) end)
+    |> Stream.filter(fn p -> risks[p] < 8 end)
+    |> Stream.reject(fn p -> p in seen end)
+    |> Enum.to_list()
+    |> case do
+      [] ->
+        :infinity
+
+      [np] ->
+        find_safest_path(np, risks, seen, risk_level + risk)
+
+      [p1, p2] ->
+        min(
+          find_safest_path(p1, risks, seen, risk_level + risk),
+          find_safest_path(p2, risks, seen, risk_level + risk)
+        )
+    end
+  end
+end
+
+LowestRiskPath.find_safest_path(risks)
+```

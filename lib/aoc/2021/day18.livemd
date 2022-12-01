@@ -1,0 +1,189 @@
+<!-- vim: syntax=markdown -->
+
+# Day 18
+
+## Part 1
+
+```elixir
+[[[[[1, 1], [2, 2]], [3, 3]], [4, 4]], [5, 5]]
+[[[[0, [3, 2]], [3, 3]], [4, 4]], [5, 5]]
+[[[[3, 0], [5, 3]], [4, 4]], [5, 5]]
+
+[[[[[1, 1], 2]]]]
+[[[[0, 3]]]]
+
+# impossible
+[[[[[[1]]]], 2]]
+
+[[[[[[2, 2], [1, 1]], [2, 2]], [3, 3]], [4, 4]], [5, 5]]
+[[[[[0, [3, 1]], [2, 2]], [3, 3]], [4, 4]], [5, 5]]
+[[[[[3, 0], [3, 2]], [3, 3]], [4, 4]], [5, 5]]
+[[[[0, [3, 2]], [3, 3]], [4, 4]], [5, 5]]
+[[[[3, 0], [5, 3]], [4, 4]], [5, 5]]
+
+[[[[[9, 8], 1], 2], 3], 4]
+[[[[0, 9], 2], 3], 4]
+```
+
+```elixir
+defmodule FishNumber do
+  def reduce(fish_number) do
+    Stream.cycle([0])
+    |> Enum.reduce_while(fish_number, fn _, fish_number ->
+      reduce_once =
+        fish_number
+        |> explode()
+        |> split()
+
+      case reduce_once do
+        ^fish_number -> {:halt, fish_number}
+        other -> {:cont, other}
+      end
+    end)
+  end
+
+  def explode(fish_number) do
+    {_left_overflow, number, _right_overflow} = explode(fish_number, 0)
+    number
+  end
+
+  def explode([a, b], depth) when depth >= 4 and is_integer(a) and is_integer(b) do
+    {a, 0, b}
+  end
+
+  def explode([a, [b, c]], depth)
+      when depth >= 4 and is_integer(a) and is_integer(b) and is_integer(c) do
+    {a + b, 0, c}
+  end
+
+  def explode(a, depth) when is_integer(a) and depth >= 4 do
+    {0, a, 0}
+  end
+
+  def explode([[a, b], c], depth)
+      when depth >= 4 and is_integer(a) and is_integer(b) and is_integer(c) do
+    # IO.inspect([[a, b], c], label: depth)
+    {a, 0, b + c}
+  end
+
+  def explode([a, b], depth) when depth >= 4 do
+    # IO.inspect([a, b], label: depth)
+    {a_left_overflow, 0, a_right_overflow} = explode(a, depth + 1)
+
+    {b_left_overflow, 0, b_right_overflow} =
+      explode(
+        add_to_most_left(b, a_right_overflow),
+        depth + 1
+      )
+
+    {
+      a_left_overflow + b_left_overflow,
+      0,
+      b_right_overflow
+    }
+  end
+
+  def explode([a, b], depth) do
+    case explode(a, depth + 1) do
+      {0, ^a, 0} ->
+        case explode(b, depth + 1) do
+          {b_left_overflow, new_b, b_right_overflow} ->
+            {0, [add_to_most_right(a, b_left_overflow), new_b], b_right_overflow}
+        end
+
+      {a_left_overflow, new_a, a_right_overflow} ->
+        {a_left_overflow, [new_a, add_to_most_left(b, a_right_overflow)], 0}
+    end
+  end
+
+  def explode(x, _depth) when is_integer(x) do
+    {0, x, 0}
+  end
+
+  def add_to_most_left(number, 0) do
+    number
+  end
+
+  def add_to_most_left(number, add) when is_integer(number) do
+    number + add
+  end
+
+  def add_to_most_left([a, b], add) when is_integer(a) do
+    [a + add, b]
+  end
+
+  def add_to_most_left([a, b], add) do
+    [add_to_most_left(a, add), b]
+  end
+
+  def add_to_most_right(number, 0) do
+    number
+  end
+
+  def add_to_most_right(number, add) when is_integer(number) do
+    number + add
+  end
+
+  def add_to_most_right([a, b], add) when is_integer(b) do
+    [a, b + add]
+  end
+
+  def add_to_most_right([a, b], add) do
+    [a, add_to_most_left(b, add)]
+  end
+
+  def split([a, b]) do
+    case split(a) do
+      ^a -> [a, split(b)]
+      splitted -> [splitted, b]
+    end
+  end
+
+  def split(a) when is_integer(a) and a >= 10 do
+    [div(a, 2), ceil(a / 2)]
+  end
+
+  def split(a) do
+    a
+  end
+
+  def add(a, b) do
+    reduce([a, b])
+  end
+end
+```
+
+```elixir
+[[[[0, 9], 2], 3], 4] = FishNumber.explode([[[[[9, 8], 1], 2], 3], 4])
+[7, [6, [5, [7, 0]]]] = FishNumber.explode([7, [6, [5, [4, [3, 2]]]]])
+[[6, [5, [7, 0]]], 3] = FishNumber.explode([[6, [5, [4, [3, 2]]]], 1])
+
+# [[3, [2, [8, 0]]], [9, [5, [4, [3, 2]]]]] =
+#   FishNumber.explode([[3, [2, [1, [7, 3]]]], [6, [5, [4, [3, 2]]]]])
+[[3, [2, [8, 0]]], [9, [5, [7, 0]]]] =
+  FishNumber.explode([[3, [2, [8, 0]]], [9, [5, [4, [3, 2]]]]])
+
+[[[[0, 7], 4], [[7, 8], [0, 13]]], [1, 1]] =
+  FishNumber.split([[[[0, 7], 4], [15, [0, 13]]], [1, 1]])
+
+[[[[0, 7], 4], [[7, 8], [6, 0]]], [8, 1]] =
+  [[[[[4, 3], 4], 4], [7, [[8, 4], 9]]], [1, 1]]
+  |> FishNumber.reduce()
+
+input = """
+[[[0,[4,5]],[0,0]],[[[4,5],[2,6]],[9,5]]]
+[7,[[[3,7],[4,3]],[[6,3],[8,8]]]]
+"""
+
+input
+|> String.split("\n", trim: true)
+|> Enum.map(&(Code.eval_string(&1) |> elem(0)))
+# |> Enum.take(2)
+|> Enum.reduce(&FishNumber.add(&2, &1))
+```
+
+```elixir
+[[[[0, [4, 5]], [0, 0]], [[[4, 5], [2, 6]], [9, 5]]], [7, [[[3, 7], [4, 3]], [[6, 3], [8, 8]]]]]
+[[[[4, 0], [5, 0]], [[[4, 5], [2, 6]], [9, 5]]], [7, [[[3, 7], [4, 3]], [[6, 3], [8, 8]]]]]
+[[[[4, 0], [5, 4]], [[0, [7, 6]], [9, 5]]], [7, [[[3, 7], [4, 3]], [[6, 3], [8, 8]]]]]
+```
