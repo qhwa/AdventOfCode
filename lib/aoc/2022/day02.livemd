@@ -1,0 +1,114 @@
+# Advent of Code 2022 Day 2
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your input here:")
+```
+
+```elixir
+input =
+  Kino.Input.read(input)
+  |> String.trim()
+  |> String.split("\n")
+  |> Enum.map(&String.split/1)
+```
+
+## Part 1
+
+```elixir
+defmodule D2P1 do
+  @map %{
+    "A" => :rock,
+    "B" => :paper,
+    "C" => :scissor,
+    "X" => :rock,
+    "Y" => :paper,
+    "Z" => :scissor
+  }
+
+  def solve(input) do
+    input
+    |> Stream.map(fn [shape1, shape2] ->
+      [@map[shape1], @map[shape2]]
+    end)
+    |> Stream.map(&round_score/1)
+    |> Enum.sum()
+  end
+
+  defp round_score([opponent_shape, my_shape]) do
+    winning_score(opponent_shape, my_shape) + shape_score(my_shape)
+  end
+
+  defp winning_score(:rock, :paper), do: 6
+  defp winning_score(:paper, :scissor), do: 6
+  defp winning_score(:scissor, :rock), do: 6
+  defp winning_score(shape, shape), do: 3
+  defp winning_score(_, _), do: 0
+
+  defp shape_score(:rock), do: 1
+  defp shape_score(:paper), do: 2
+  defp shape_score(:scissor), do: 3
+end
+```
+
+```elixir
+D2P1.solve(input)
+```
+
+## Part 2
+
+```elixir
+defmodule D2P2 do
+  @map %{
+    "A" => :rock,
+    "B" => :paper,
+    "C" => :scissor
+  }
+
+  @lose "X"
+  @draw "Y"
+  @win "Z"
+
+  def solve(input) do
+    input
+    |> Stream.map(fn [shape1, shape2] ->
+      [@map[shape1], according_shape(@map[shape1], shape2)]
+    end)
+    |> Stream.map(&round_score/1)
+    |> Enum.sum()
+  end
+
+  defp according_shape(:rock, @lose), do: :scissor
+  defp according_shape(:paper, @lose), do: :rock
+  defp according_shape(:scissor, @lose), do: :paper
+  defp according_shape(:rock, @win), do: :paper
+  defp according_shape(:paper, @win), do: :scissor
+  defp according_shape(:scissor, @win), do: :rock
+  defp according_shape(shape, @draw), do: shape
+
+  defp round_score([opponent_shape, my_shape]) do
+    winning_score(opponent_shape, my_shape) + shape_score(my_shape)
+  end
+
+  defp winning_score(:rock, :paper), do: 6
+  defp winning_score(:paper, :scissor), do: 6
+  defp winning_score(:scissor, :rock), do: 6
+  defp winning_score(shape, shape), do: 3
+  defp winning_score(_, _), do: 0
+
+  defp shape_score(:rock), do: 1
+  defp shape_score(:paper), do: 2
+  defp shape_score(:scissor), do: 3
+end
+```
+
+```elixir
+D2P2.solve(input)
+```
