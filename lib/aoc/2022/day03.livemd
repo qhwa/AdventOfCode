@@ -1,0 +1,96 @@
+# Advent of Code 2022 Day 1
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your input here:")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.trim()
+  |> String.split("\n")
+```
+
+## Part 1
+
+```elixir
+defmodule Priority do
+  def to_priority(char) when char in ?a..?z, do: char - ?a + 1
+  def to_priority(char) when char in ?A..?Z, do: char - ?A + 27
+end
+```
+
+```elixir
+defmodule D3P1 do
+  import Priority
+
+  def solve(input) do
+    input
+    |> Stream.map(&to_compartments/1)
+    |> Stream.map(&find_duplicated_item/1)
+    |> Stream.map(&to_priority/1)
+    |> Enum.sum()
+  end
+
+  defp to_compartments(items) do
+    len = byte_size(items)
+    String.split_at(items, div(len, 2))
+  end
+
+  defp find_duplicated_item({s1, s2}) do
+    chars1 = s1 |> String.to_charlist() |> MapSet.new()
+    chars2 = s2 |> String.to_charlist() |> MapSet.new()
+
+    [duplicated] = MapSet.intersection(chars1, chars2) |> Enum.to_list()
+    duplicated
+  end
+end
+```
+
+```elixir
+D3P1.solve(input)
+```
+
+## Part 2
+
+```elixir
+defmodule D2P1 do
+  import Priority
+
+  def solve(input) do
+    input
+    |> Stream.map(&to_compartments/1)
+    |> Stream.chunk_every(3)
+    |> Stream.map(&find_duplicated_item/1)
+    |> Stream.map(&to_priority/1)
+    |> Enum.sum()
+  end
+
+  defp to_compartments(items) do
+    items |> String.to_charlist() |> Enum.uniq()
+  end
+
+  defp find_duplicated_item(carries) do
+    [duplicated] =
+      carries
+      |> Stream.map(&MapSet.new/1)
+      |> Enum.reduce(&MapSet.intersection/2)
+      |> MapSet.to_list()
+
+    duplicated
+  end
+end
+```
+
+```elixir
+D2P1.solve(input)
+```
