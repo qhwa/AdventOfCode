@@ -1,0 +1,69 @@
+# Advent of Code 2022 Day 1
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"}
+])
+```
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your input here:")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.trim()
+  |> String.split("\n")
+  |> Enum.map(fn line ->
+    line
+    |> String.split(~r/\D+/)
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.chunk_every(2)
+  end)
+```
+
+## Part 1
+
+```elixir
+defmodule D4P1 do
+  def solve(input) do
+    input
+    |> Enum.count(&fully_contain?/1)
+  end
+
+  defp fully_contain?([[a1, b1], [a2, b2]]) do
+    Range.disjoint?(
+      Range.new(a1, b1),
+      Range.new(a2, b2)
+    )
+  end
+end
+```
+
+```elixir
+D4P1.solve(input)
+```
+
+## Part 2
+
+```elixir
+defmodule D4P2 do
+  def solve(input) do
+    input
+    |> Enum.count(&overlap?/1)
+  end
+
+  defp overlap?([[a1, b1], [a2, b2]]) do
+    [r1, r2] = [Range.new(a1, b1), Range.new(a2, b2)]
+    a2 in r1 or b2 in r1 or a1 in r2 or b1 in r2
+  end
+end
+```
+
+```elixir
+D4P2.solve(input)
+```
