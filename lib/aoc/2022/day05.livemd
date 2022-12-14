@@ -1,0 +1,144 @@
+# Advent of Code 2022 Day 1
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"}
+])
+```
+
+## Input
+
+```elixir
+stack_input = """
+[Q]         [N]             [N]    
+[H]     [B] [D]             [S] [M]
+[C]     [Q] [J]         [V] [Q] [D]
+[T]     [S] [Z] [F]     [J] [J] [W]
+[N] [G] [T] [S] [V]     [B] [C] [C]
+[S] [B] [R] [W] [D] [J] [Q] [R] [Q]
+[V] [D] [W] [G] [P] [W] [N] [T] [S]
+[B] [W] [F] [L] [M] [F] [L] [G] [J]
+"""
+```
+
+```elixir
+defmodule StackParser do
+  def parse(input) do
+    input
+    |> String.split("\n")
+    |> Enum.map(&parse_line/1)
+    |> zip()
+  end
+
+  defp parse_line(<<seg::binary-3, " ", rest::binary>>),
+    do: [parse_seg(seg) | parse_line(rest)]
+
+  defp parse_line(<<seg::binary-3>>), do: [parse_seg(seg)]
+  defp parse_line(""), do: []
+
+  defp parse_seg(<<?[, char::binary-1, ?]>>), do: char
+  defp parse_seg("   "), do: nil
+
+  defp zip(lines) do
+    lines
+    |> Enum.zip()
+    |> Enum.map(fn stack ->
+      stack
+      |> Tuple.to_list()
+      |> Enum.drop_while(&(!&1))
+    end)
+  end
+end
+
+stack_input =
+  stack_input
+  |> String.trim_trailing()
+  |> StackParser.parse()
+```
+
+```elixir
+move_input = Kino.Input.textarea("Paste your movement input here:")
+```
+
+```elixir
+move_input =
+  move_input
+  |> Kino.Input.read()
+
+move_input =
+  Regex.scan(~r/move (\d+) from (\d+) to (\d+)/, move_input, capture: :all_but_first)
+  |> Enum.map(&Enum.map(&1, fn number -> String.to_integer(number) end))
+```
+
+## Part 1
+
+```elixir
+defmodule D5P1 do
+  def solve(stack_input, move_input) do
+    move_input
+    |> Enum.reduce(stack_input, &move/2)
+    |> Enum.map_join(&hd/1)
+  end
+
+  defp move([amount, from, to], stacks) do
+    stacks
+    |> Enum.with_index(1)
+    |> Enum.map(fn
+      {stack, ^from} ->
+        Enum.drop(stack, amount)
+
+      {stack, ^to} ->
+        slice(stacks, from, amount) ++ stack
+
+      {stack, _} ->
+        stack
+    end)
+  end
+
+  defp slice(stacks, from, amount) do
+    Enum.at(stacks, from - 1)
+    |> Enum.take(amount)
+    |> Enum.reverse()
+  end
+end
+```
+
+```elixir
+D5P1.solve(stack_input, move_input)
+```
+
+## Part 2
+
+```elixir
+defmodule D5P2 do
+  def solve(stack_input, move_input) do
+    move_input
+    |> Enum.reduce(stack_input, &move/2)
+    |> Enum.map_join(&hd/1)
+  end
+
+  defp move([amount, from, to], stacks) do
+    stacks
+    |> Enum.with_index(1)
+    |> Enum.map(fn
+      {stack, ^from} ->
+        Enum.drop(stack, amount)
+
+      {stack, ^to} ->
+        slice(stacks, from, amount) ++ stack
+
+      {stack, _} ->
+        stack
+    end)
+  end
+
+  defp slice(stacks, from, amount) do
+    Enum.at(stacks, from - 1)
+    |> Enum.take(amount)
+  end
+end
+```
+
+```elixir
+D5P2.solve(stack_input, move_input)
+```
