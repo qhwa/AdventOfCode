@@ -1,0 +1,69 @@
+# Advent of Code 2022 Day 6
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"}
+])
+```
+
+## Context
+
+A solution in Elixir for [day 6](https://adventofcode.com/2022/day/6) of [Advent of Code](https://adventofcode.com).
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your input here:")
+```
+
+```elixir
+input = input |> Kino.Input.read()
+```
+
+## Part 1
+
+```elixir
+defmodule D6P1 do
+  def solve(input) do
+    first_diff_chars(input)
+  end
+
+  defp first_diff_chars(<<a, b, c, d, rest::binary>>)
+       when a == b or a == c or a == d or b == c or b == d or c == d,
+       do: first_diff_chars(<<b, c, d, rest::binary>>) + 1
+
+  defp first_diff_chars(_), do: 4
+end
+```
+
+```elixir
+D6P1.solve(input)
+```
+
+## Part 2
+
+```elixir
+defmodule D6P2 do
+  def solve(input) do
+    first_diff_chars(input)
+  end
+
+  defp first_diff_chars(<<bytes::binary-14, _::binary>> = chars) do
+    if all_different?(bytes) do
+      byte_size(bytes)
+    else
+      <<_, rest::binary>> = chars
+      first_diff_chars(rest) + 1
+    end
+  end
+
+  defp all_different?(bytes) do
+    chars = bytes |> String.to_charlist()
+    chars == Enum.uniq(chars)
+  end
+end
+```
+
+```elixir
+D6P2.solve(input)
+```
