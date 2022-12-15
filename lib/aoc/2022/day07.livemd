@@ -1,0 +1,167 @@
+# Advent of Code 2022 Day 7
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"}
+])
+```
+
+## Context
+
+A solution in Elixir for [day 7](https://adventofcode.com/2022/day/7) of [Advent of Code](https://adventofcode.com) 2022.
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your input here:")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.trim()
+  |> String.split("\n")
+```
+
+## Part 1
+
+Firstly, we define some structs to represent the data.
+
+`Dir` and `File` are nodes for directories and files, respectively. For the whole file system, we use a plain map, for example:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+%{
+  [] => %D7.Dir{path: [], size: 48381165},
+  ["a"] => %D7.Dir{path: ["a"], size: 94853},
+  ["d"] => %D7.Dir{path: ["d"], size: 24933642},
+  ["e", "a"] => %D7.Dir{path: ["e", "a"], size: 584}
+}
+```
+
+For the `size` attribute in a `Dir` struct, it is designed to be the total size including all the children directories.
+
+```elixir
+defmodule D7.Dir do
+  defstruct [:path, size: 0]
+end
+
+defmodule D7.File do
+  defstruct [:path, :size]
+end
+```
+
+Now let's parse the command output to the file system.
+
+```elixir
+defmodule FS do
+  alias D7.Dir
+  alias D7.File
+
+  @root %Dir{path: []}
+
+  def parse(input) do
+    {fs, _cd} =
+      input
+      |> Enum.reduce({%{[] => @root}, @root.path}, fn
+        "$ cd ..", {fs, cd} ->
+          {fs, tl(cd)}
+
+        "$ cd /", {fs, _} ->
+          {fs, @root.path}
+
+        "$ cd " <> dir, {fs, cd} ->
+          path = [dir | cd]
+          {add_dir(fs, path), path}
+
+        <<n, _::binary>> = ls, {fs, cd} when n in ?1..?9 ->
+          {
+            add_file(fs, cd, parse_file_size(ls)),
+            cd
+          }
+
+        _, acc ->
+          acc
+      end)
+
+    fs
+  end
+
+  defp add_dir(fs, path) do
+    Map.put(fs, path, %Dir{path: path})
+  end
+
+  defp parse_file_size(ls) do
+    [size, file_name] = String.split(ls, " ")
+
+    %File{
+      size: String.to_integer(size),
+      path: file_name
+    }
+  end
+
+  defp add_file(fs, cd, file) do
+    affected_dirs(cd)
+    |> Enum.reduce(fs, &add_size_at(&2, &1, file.size))
+  end
+
+  defp affected_dirs([]), do: [[]]
+
+  defp affected_dirs([_ | rest] = cd),
+    do: [cd | affected_dirs(rest)]
+
+  defp add_size_at(fs, path, size) do
+    Map.update!(fs, path, fn dir ->
+      Map.update!(dir, :size, &(&1 + size))
+    end)
+  end
+end
+```
+
+```elixir
+fs = FS.parse(input)
+```
+
+With this struct, the problem is easy to solve now:
+
+```elixir
+defmodule D7P1 do
+  def solve(fs),
+    do: dirs_within_size(fs, 100_000)
+
+  defp dirs_within_size(fs, limit) do
+    for {_path, %{size: size}} <- fs, size <= limit, reduce: 0 do
+      acc -> acc + size
+    end
+  end
+end
+```
+
+```elixir
+D7P1.solve(fs)
+```
+
+## Part 2
+
+```elixir
+defmodule D7P2 do
+  def solve(%{[] => %{size: total_used}} = fs) do
+    target = 30_000_000 - (70_000_000 - total_used)
+
+    find_suitable_to_delete(fs, target)
+  end
+
+  defp find_suitable_to_delete(fs, target) do
+    fs
+    |> Stream.map(fn {_, dir} -> dir end)
+    |> Stream.filter(&(&1.size > target))
+    |> Enum.min_by(&(&1.size - target))
+  end
+end
+```
+
+```elixir
+D7P2.solve(fs).size
+```
