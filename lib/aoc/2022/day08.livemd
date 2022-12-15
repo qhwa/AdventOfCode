@@ -1,0 +1,213 @@
+# Advent of Code 2022 Day 8
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"}
+])
+```
+
+## Context
+
+A solution in Elixir for [day 8](https://adventofcode.com/2022/day/8) of [Advent of Code](https://adventofcode.com) 2022.
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your input here:")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.trim()
+  |> String.split("\n")
+```
+
+## Part 1
+
+Firstly, we define the map struct.
+
+Elixir's [`Map`](https://hexdocs.pm/elixir/Map.html) is adaquate here. An example struct would be:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+%{
+  size: {4, 4},
+  grids: %{
+    {0, 0} => 3,
+    {0, 1} => 0,
+    ...
+  }
+}
+```
+
+where the key is the coordinate of the grid and the value if the height of the tree in the grid.
+
+```elixir
+defmodule MapParser do
+  def parse(input) do
+    input =
+      input
+      |> Enum.map(&String.to_charlist/1)
+
+    %{
+      size: calc_size(input),
+      grids: parse_grids(input)
+    }
+  end
+
+  defp calc_size(input) do
+    {
+      hd(input) |> length(),
+      input |> length()
+    }
+  end
+
+  defp parse_grids(input) do
+    input
+    |> Stream.with_index()
+    |> Enum.reduce(%{}, fn {row, y}, grids ->
+      row
+      |> Stream.map(&(&1 - ?0))
+      |> Stream.with_index()
+      |> Enum.reduce(grids, fn {height, x}, grids ->
+        Map.put(grids, {x, y}, height)
+      end)
+    end)
+  end
+end
+```
+
+```elixir
+map = MapParser.parse(input)
+```
+
+```elixir
+defmodule D8P1 do
+  defguard is_edge(x, y, w, h) when x == 0 or y == 0 or x == w - 1 or y == h - 1
+
+  def solve(map),
+    do: count_visible_trees(map)
+
+  defp count_visible_trees(map) do
+    map.grids
+    |> Stream.filter(fn {pos, _} -> visible_at?(map, pos) end)
+    |> Enum.count()
+  end
+
+  defp visible_at?(%{size: {w, h}}, {x, y}) when is_edge(x, y, w, h) do
+    true
+  end
+
+  defp visible_at?(map, pos),
+    do:
+      visible_to_right?(map, pos) or
+        visible_to_left?(map, pos) or
+        visible_to_up?(map, pos) or
+        visible_to_down?(map, pos)
+
+  defp visible_to_right?(map, pos),
+    do: higher_than_all_neighbours?(map, pos, neighbours(map, pos, :right))
+
+  defp visible_to_left?(map, pos),
+    do: higher_than_all_neighbours?(map, pos, neighbours(map, pos, :left))
+
+  defp visible_to_up?(map, pos),
+    do: higher_than_all_neighbours?(map, pos, neighbours(map, pos, :up))
+
+  defp visible_to_down?(map, pos),
+    do: higher_than_all_neighbours?(map, pos, neighbours(map, pos, :down))
+
+  defp higher_than_all_neighbours?(map, pos, neighbours) do
+    h = height_at(map, pos)
+
+    Enum.all?(neighbours, fn pos ->
+      height_at(map, pos) < h
+    end)
+  end
+
+  defp neighbours(_, {x, y}, :left), do: 0..(x - 1) |> Enum.map(&{&1, y})
+  defp neighbours(_, {x, y}, :up), do: 0..(y - 1) |> Enum.map(&{x, &1})
+  defp neighbours(%{size: {w, _}}, {x, y}, :right), do: (x + 1)..(w - 1) |> Enum.map(&{&1, y})
+
+  defp neighbours(%{size: {_, h}}, {x, y}, :down), do: (y + 1)..(h - 1) |> Enum.map(&{x, &1})
+
+  defp height_at(%{grids: grids}, pos) do
+    Map.get(grids, pos, -1)
+  end
+end
+```
+
+```elixir
+D8P1.solve(map)
+```
+
+## Part 2
+
+```elixir
+defmodule D8P2 do
+  defguard is_edge(x, y, w, h) when x == 0 or y == 0 or x == w - 1 or y == h - 1
+
+  def solve(map),
+    do: compute_scenic_scores(map) |> max_score()
+
+  defp compute_scenic_scores(map) do
+    map.grids
+    |> Stream.map(fn {pos, _} ->
+      {
+        pos,
+        scenic_score_at(map, pos)
+      }
+    end)
+  end
+
+  def scenic_score_at(%{size: {w, h}}, {x, y}) when is_edge(x, y, w, h),
+    do: 0
+
+  def scenic_score_at(map, pos) do
+    [:left, :right, :up, :down]
+    |> Stream.map(&view_distance(map, pos, &1))
+    |> Enum.product()
+  end
+
+  defp view_distance(%{} = map, pos, dir) do
+    tree_h = height_at(map, pos)
+
+    neighbours(map, pos, dir)
+    |> Enum.reduce_while(0, fn p, distance ->
+      if height_at(map, p) < tree_h do
+        {:cont, distance + 1}
+      else
+        {:halt, distance + 1}
+      end
+    end)
+  end
+
+  defp neighbours(_, {x, y}, :left),
+    do: (x - 1)..0 |> Enum.map(&{&1, y})
+
+  defp neighbours(_, {x, y}, :up),
+    do: (y - 1)..0 |> Enum.map(&{x, &1})
+
+  defp neighbours(%{size: {w, _}}, {x, y}, :right),
+    do: (x + 1)..(w - 1) |> Enum.map(&{&1, y})
+
+  defp neighbours(%{size: {_, h}}, {x, y}, :down),
+    do: (y + 1)..(h - 1) |> Enum.map(&{x, &1})
+
+  defp height_at(%{grids: grids}, pos) do
+    Map.get(grids, pos, -1)
+  end
+
+  defp max_score(stream) do
+    {_pos, score} = Enum.max_by(stream, fn {_pos, score} -> score end)
+    score
+  end
+end
+```
+
+```elixir
+D8P2.solve(map)
+```
