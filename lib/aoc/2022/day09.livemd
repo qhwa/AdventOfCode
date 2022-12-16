@@ -1,0 +1,302 @@
+# Advent of Code 2022 Day 9
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"}
+])
+```
+
+## Context
+
+A solution in Elixir for [day 9](https://adventofcode.com/2022/day/9) of [Advent of Code](https://adventofcode.com) 2022.
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your input here:")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.trim()
+  |> String.split("\n")
+```
+
+```elixir
+instructions =
+  input
+  |> Stream.map(&String.split(&1, " "))
+  |> Enum.map(fn [dir, d] ->
+    {
+      String.to_atom(dir),
+      String.to_integer(d)
+    }
+  end)
+```
+
+## Part 1
+
+First of all, let's define a struct to represent the state, something like:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+%{
+  head_pos: {1, 1},
+  tail_pos: {1, 0},
+  tail_visited: %MapSet{[{0, 0}, {1, 0}]}
+}
+```
+
+[`MapSet`](https://hexdocs.pm/elixir/MapSet.html) is a perfect data structure for puzzle one since we don't need sorting but only uniqueness.
+
+```elixir
+defmodule Rope do
+  @origin {0, 0}
+
+  @type t :: %Rope{
+          head_pos: pos(),
+          tail_pos: pos(),
+          tail_visited: MapSet.t()
+        }
+
+  @type pos :: {integer(), integer()}
+
+  defstruct head_pos: @origin,
+            tail_pos: @origin,
+            tail_visited: MapSet.new([@origin])
+end
+```
+
+Then, let's create a simulator which can be used to debug step by step. By the way we create a matrix helper module to make calculation with tuples easier.
+
+```elixir
+defmodule Vector2d do
+  @doc """
+  Turn a direction (L, R, U, or D) into a vector.
+  """
+  def velocity(:L), do: {-1, 0}
+  def velocity(:R), do: {1, 0}
+  def velocity(:U), do: {0, -1}
+  def velocity(:D), do: {0, 1}
+
+  @doc """
+  Add two vector.
+  """
+  def add({x1, y1}, {x2, y2}),
+    do: {x1 + x2, y1 + y2}
+
+  @doc """
+  Minus one vector with another.
+  """
+  def minus({x1, y1}, {x2, y2}),
+    do: {x1 - x2, y1 - y2}
+
+  @doc """
+  Multiple a vector with a number.
+  """
+  def multiple({x, y}, t) when is_number(t),
+    do: {x * t, y * t}
+
+  def normalize({x, y}) do
+    {normalize_number(x), normalize_number(y)}
+  end
+
+  defp normalize_number(n) when is_number(n) and n < 0, do: -1
+  defp normalize_number(n) when is_number(n) and n == 0, do: 0
+  defp normalize_number(n) when is_number(n), do: 1
+end
+```
+
+```elixir
+defmodule RopeSimulator do
+  import Vector2d
+
+  @type instruct :: {dir(), non_neg_integer()}
+  @type dir :: :L | :R | :U | :D
+
+  @spec move(Rope.t(), instruct()) :: Rope.t()
+  def move(rope, {dir, 1}) do
+    new_head_pos = velocity(dir) |> add(rope.head_pos)
+
+    if connected?(new_head_pos, rope.tail_pos) do
+      %{rope | head_pos: new_head_pos}
+    else
+      %{
+        rope
+        | head_pos: new_head_pos,
+          tail_pos: rope.head_pos,
+          tail_visited: MapSet.put(rope.tail_visited, rope.head_pos)
+      }
+    end
+  end
+
+  def move(rope, {dir, s}) do
+    rope
+    |> move({dir, 1})
+    |> move({dir, s - 1})
+  end
+
+  defp connected?(pos1, pos2) do
+    case minus(pos1, pos2) do
+      {dx, dy} when abs(dx) <= 1 and abs(dy) <= 1 -> true
+      _ -> false
+    end
+  end
+end
+```
+
+We can debug it like:
+
+```elixir
+%Rope{}
+|> RopeSimulator.move({:R, 1})
+|> RopeSimulator.move({:R, 1})
+|> RopeSimulator.move({:U, 1})
+|> RopeSimulator.move({:U, 1})
+```
+
+Now it's time to solve the first puzzle with the simulator.
+
+```elixir
+defmodule D9P1 do
+  def solve(instructions) do
+    %{tail_visited: visited} =
+      instructions
+      |> Enum.reduce(
+        %Rope{},
+        &RopeSimulator.move(&2, &1)
+      )
+
+    Enum.count(visited)
+  end
+end
+```
+
+```elixir
+D9P1.solve(instructions)
+```
+
+## Part 2
+
+Now there are nine knots on the rope! Absolutely we need to upgrade our model and simulator. Let's call them `Rope2` and `RopeSimulator2`:
+
+```elixir
+defmodule Rope2 do
+  @origin {0, 0}
+
+  @type t :: %Rope2{
+          knot_positions: list(pos()),
+          tail_visited: MapSet.t()
+        }
+
+  @type pos :: {integer(), integer()}
+
+  defstruct knot_positions: [@origin, @origin],
+            tail_visited: MapSet.new([@origin])
+end
+```
+
+```elixir
+defmodule RopeSimulator2 do
+  import Vector2d
+
+  @type instruct :: {dir(), non_neg_integer()}
+  @type dir :: :L | :R | :U | :D
+
+  @spec move(Rope2.t(), instruct()) :: Rope2.t()
+  def move(%{knot_positions: [head_pos | _] = knots} = rope, {dir, 1}) do
+    new_head_pos = velocity(dir) |> add(head_pos)
+    new_positions = move_knots(knots, new_head_pos)
+    new_tail_pos = List.last(new_positions)
+
+    %{
+      rope
+      | knot_positions: new_positions,
+        tail_visited: MapSet.put(rope.tail_visited, new_tail_pos)
+    }
+  end
+
+  def move(rope, {dir, s}) do
+    rope
+    |> move({dir, 1})
+    |> move({dir, s - 1})
+  end
+
+  defp move_knots([_ | tail], new_head_pos),
+    do: [new_head_pos | move_tails(tail, new_head_pos)]
+
+  defp move_knots([], _), do: []
+
+  defp move_tails([knot | tail], new_head_pos) do
+    if connected?(knot, new_head_pos) do
+      [knot | tail]
+    else
+      p = move_knot(knot, new_head_pos)
+      [p | move_tails(tail, p)]
+    end
+  end
+
+  defp move_tails([], _), do: []
+
+  defp connected?(pos1, pos2) do
+    case minus(pos1, pos2) do
+      {dx, dy} when abs(dx) <= 1 and abs(dy) <= 1 -> true
+      _ -> false
+    end
+  end
+
+  defp move_knot(knot, new_head_pos),
+    do:
+      minus(new_head_pos, knot)
+      |> normalize()
+      |> add(knot)
+end
+```
+
+Give it a test:
+
+```elixir
+%Rope2{}
+|> RopeSimulator2.move({:R, 5})
+```
+
+Looks good. Now let's use it to solve puzzle one:
+
+```elixir
+%{tail_visited: visited} =
+  instructions
+  |> Enum.reduce(
+    %Rope2{},
+    &RopeSimulator2.move(&2, &1)
+  )
+
+Enum.count(visited)
+```
+
+Yeah! It prints the same result as our first version. It's time to use it to solve part two!
+
+*I spent some time fixing bugs here actually. It was good to use the examples to make sure the logic is correct.*
+
+```elixir
+defmodule D9P2 do
+  def solve(instructions) do
+    %{tail_visited: visited} =
+      instructions
+      |> Enum.reduce(
+        %Rope2{
+          knot_positions: List.duplicate({0, 0}, 10)
+        },
+        &RopeSimulator2.move(&2, &1)
+      )
+
+    Enum.count(visited)
+  end
+end
+```
+
+```elixir
+D9P2.solve(instructions)
+```
