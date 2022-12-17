@@ -1,0 +1,161 @@
+# Advent of Code 2022 Day 10
+
+```elixir
+Mix.install([
+  {:kino, ">= 0.0.0"},
+  {:ex_png, github: "mikowitz/ex_png"}
+])
+```
+
+## Context
+
+A solution in Elixir for [day 10](https://adventofcode.com/2022/day/10) of [Advent of Code](https://adventofcode.com) 2022.
+
+## Input
+
+```elixir
+input = Kino.Input.textarea("Paste your input here:")
+```
+
+```elixir
+input =
+  input
+  |> Kino.Input.read()
+  |> String.trim()
+  |> String.split("\n")
+```
+
+```elixir
+instructions =
+  input
+  |> Stream.map(&String.split(&1, " "))
+  |> Enum.map(fn
+    ["noop"] -> :noop
+    ["addx", n] -> {:addx, String.to_integer(n)}
+  end)
+```
+
+## Part 1
+
+We may build an emulator for part 1, for example:
+
+<!-- livebook:{"force_markdown":true} -->
+
+```elixir
+iex> Emulator.run(instructions, 6) # run the instructions for six cycles
+-1 # the value of register X
+```
+
+```elixir
+defmodule Emulator do
+  def run(instructions, cycles) do
+    run(instructions, 1, cycles)
+  end
+
+  defp run([ins | rest], x, cycles) when is_integer(cycles) and cycles > 1 do
+    {value, duration} = run_instruct(ins, x)
+
+    if duration < cycles do
+      run(rest, value, cycles - duration)
+    else
+      x
+    end
+  end
+
+  defp run(_, x, _), do: x
+
+  defp run_instruct(:noop, x), do: {x, 1}
+  defp run_instruct({:addx, d}, x), do: {x + d, 2}
+end
+```
+
+```elixir
+Emulator.run(instructions, 6)
+```
+
+Correct!
+
+Let's try to solve part 1 with this emulator.
+
+```elixir
+defmodule D10P1 do
+  def solve(instructions) do
+    [20, 60, 100, 140, 180, 220]
+    |> Stream.map(fn cycles ->
+      cycles * Emulator.run(instructions, cycles)
+    end)
+    |> Enum.sum()
+  end
+end
+```
+
+```elixir
+D10P1.solve(instructions)
+```
+
+Of course it is not optimal in performance but it works. Let's see how it works in part 2.
+
+## Part 2
+
+In part 2 we are asked to print out the image. Each cycle we print a dot on the screen if the sprite is luckily at the position of the current cursor.
+
+```elixir
+defmodule D10P2 do
+  @screen_width 40
+
+  def solve(instructions, printer \\ &puts/1) do
+    1..240
+    |> Stream.map(&print_dot(instructions, &1))
+    |> printer.()
+  end
+
+  defp print_dot(instructions, i) do
+    sprite_at = Emulator.run(instructions, i)
+    cursor_at = rem(i - 1, @screen_width) + 1
+
+    sprite_at in (cursor_at - 2)..cursor_at
+  end
+
+  defp puts(data) do
+    data
+    |> Stream.map(fn dot ->
+      if dot, do: "█", else: " "
+    end)
+    |> Stream.chunk_every(@screen_width)
+    |> Enum.intersperse("\n")
+    |> IO.iodata_to_binary()
+    |> IO.puts()
+  end
+end
+```
+
+Give it a test:
+
+```elixir
+D10P2.solve(instructions)
+```
+
+For a better resolution, we can print it out as a PNG bitmap:
+
+```elixir
+D10P2.solve(instructions, fn stream ->
+  original_width = 40
+  scale = 8
+
+  {:ok, png} =
+    stream
+    |> Stream.map(fn dot ->
+      if dot, do: ExPng.Color.rgb(255, 0, 0), else: ExPng.Color.white()
+    end)
+    |> Stream.flat_map(&List.duplicate(&1, scale))
+    |> Stream.chunk_every(original_width * scale)
+    |> Stream.flat_map(&List.duplicate(&1, scale))
+    |> Enum.to_list()
+    |> ExPng.Image.new()
+    |> ExPng.Image.to_binary()
+
+  Kino.Image.new(png, "image/png")
+end)
+```
+
+Much easier to read!
